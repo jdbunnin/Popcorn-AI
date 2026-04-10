@@ -329,7 +329,29 @@ function renderDetail(d) {
     html += '<div class="card" style="border-left:3px solid #f59e0b">';
     html += '<div class="card-t">Entertainment Prediction</div>';
     html += '<div style="font-size:15px;color:#e0e0e0;line-height:1.8">' + (d.entertainment_prediction || '') + '</div>';
+    if (d.format_recommendation) html += '<div style="margin-top:8px;font-size:12px;color:#f59e0b">Format: ' + d.format_recommendation + '</div>';
+    if (d.tone_and_style) html += '<div style="font-size:12px;color:#f59e0b">Tone: ' + d.tone_and_style + '</div>';
+    if (d.target_demographic) html += '<div style="font-size:12px;color:#22d3ee">Target: ' + d.target_demographic + '</div>';
+    if (d.audience_size_millions) html += '<div style="font-size:12px;color:#4ade80">Audience: ~' + d.audience_size_millions + 'M US adults</div>';
     html += '</div>';
+
+    // Comparable successes
+    if (d.comparable_successes && d.comparable_successes.length > 0) {
+        html += '<div class="card"><div class="card-t">📎 Comparable Successes</div>';
+        for (var cs = 0; cs < d.comparable_successes.length; cs++) {
+            html += '<div class="signal-item">' + d.comparable_successes[cs] + '</div>';
+        }
+        html += '</div>';
+    }
+
+    // Risk factors
+    if (d.risk_factors && d.risk_factors.length > 0) {
+        html += '<div class="card" style="border-left:3px solid #f87171"><div class="card-t">⚠️ Risk Factors</div>';
+        for (var rf = 0; rf < d.risk_factors.length; rf++) {
+            html += '<div style="padding:6px 10px;font-size:12px;color:#fca5a5">' + d.risk_factors[rf] + '</div>';
+        }
+        html += '</div>';
+    }
 
     // Demand gap
     if (d.demand_gap) {
