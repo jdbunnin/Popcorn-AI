@@ -23,7 +23,7 @@ NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
 # CACHE — avoid hitting rate limits
 # ============================================================
 _cache = {}
-CACHE_TTL = 3600  # 1 hour
+CACHE_TTL = 86400  # 24 hours
 
 def get_cached(key):
     if key in _cache:
@@ -51,7 +51,7 @@ def get_google_trends(search_term, timeframe='today 12-m'):
 
     try:
         from pytrends.request import TrendReq
-        pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25))
+        pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25), retries=2, backoff_factor=1.0)
         pytrends.build_payload([search_term], cat=0, timeframe=timeframe)
         data = pytrends.interest_over_time()
 
@@ -95,8 +95,8 @@ def get_google_trends_batch(terms, timeframe='today 12-m'):
     for i, term in enumerate(terms):
         result = get_google_trends(term, timeframe)
         results.append(result)
-        if i < len(terms) - 1:
-            time.sleep(2)  # Rate limit protection
+       if i < len(terms) - 1:
+            time.sleep(5)  # Rate limit protection
     return results
 
 
