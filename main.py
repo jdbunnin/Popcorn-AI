@@ -1,744 +1,690 @@
 """
 Popcorn AI — Audience Demand Intelligence
-Retroactive Proof v2: Content-Blind Cultural Signals
-These signals contain NO mention of the movies/shows themselves.
-They measure the underlying psychological CRAVING that the content satisfied.
+v3.0: Real data from Google Trends, YouTube, Spotify, 
+Wikipedia, TMDB, NewsAPI, AO3, Open Library
 """
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 import os
+import json
 from datetime import datetime
+from data_collectors import (
+    get_google_trends, get_google_trends_batch,
+    search_youtube, get_youtube_trending_by_category,
+    search_spotify_playlists, get_spotify_category_playlists,
+    get_wikipedia_pageviews, get_wikipedia_batch,
+    get_tmdb_upcoming_movies, get_tmdb_trending, search_tmdb,
+    search_news, get_entertainment_headlines,
+    get_ao3_tag_count, get_ao3_batch,
+    search_open_library,
+    collect_signals_for_topic,
+)
 
 app = Flask(__name__, static_folder='public', static_url_path='')
 
 # ============================================================
-# BARBIE — Content-Blind Cultural Signals
-# What was the PSYCHOLOGICAL STATE that made Barbie resonate?
-# None of these mention Barbie, Greta Gerwig, or Margot Robbie
+# SERVE FRONTEND
 # ============================================================
-
-BARBIE_SIGNALS = {
-    "title": "Barbie (2023)",
-    "release_date": "July 21, 2023",
-    "outcome": "$1.44B worldwide on $145M budget",
-    "thesis": "Popcorn detected a collision of 90s nostalgia, camp/pink aesthetics, feminist comedy appetite, and communal theatrical craving — all peaking simultaneously in early 2023. This demand existed independent of any specific film.",
-    "what_popcorn_would_have_said": {
-        "date": "January 2023 — 6 months before release",
-        "alert_level": "CRITICAL DEMAND COLLISION",
-        "message": "Four independent cultural currents are converging: millennial nostalgia is at a 5-year high, pink/camp aesthetics are accelerating in fashion and social media, appetite for female-directed comedy is surging with no supply to match, and post-COVID audiences are craving communal theatrical events. Content that sits at the center of this collision — nostalgic, pink, feminist, fun, and designed for group viewing — has a massive unserved demand window. No announced project fully captures this. Estimated window: 6-10 months."
-    },
-    "cultural_currents": [
-        {
-            "name": "Millennial Nostalgia Cycle",
-            "category": "Psychological Drive",
-            "why_it_matters": "Adults aged 28-42 were actively seeking comfort through childhood references. This is a documented psychological response to economic uncertainty and life-stage anxiety (career pressure, parenting, aging).",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "90s nostalgia",
-                    "data": {
-                        "2022-07": 42, "2022-08": 45, "2022-09": 48,
-                        "2022-10": 52, "2022-11": 55, "2022-12": 58,
-                        "2023-01": 62, "2023-02": 68, "2023-03": 72,
-                        "2023-04": 78, "2023-05": 85, "2023-06": 91,
-                        "2023-07": 100
-                    },
-                    "insight": "Steady 12-month climb. Not seasonal — structural psychological shift. Millennials processing aging anxiety through childhood comfort objects."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "90s fashion comeback",
-                    "data": {
-                        "2022-07": 35, "2022-08": 38, "2022-09": 44,
-                        "2022-10": 48, "2022-11": 52, "2022-12": 55,
-                        "2023-01": 61, "2023-02": 67, "2023-03": 74,
-                        "2023-04": 80, "2023-05": 88, "2023-06": 95,
-                        "2023-07": 100
-                    },
-                    "insight": "Fashion nostalgia is a leading indicator of entertainment nostalgia by 3-6 months. When people dress like an era, they want to WATCH that era next."
-                },
-                {
-                    "source": "Spotify",
-                    "term": "90s pop playlist creation",
-                    "data": {
-                        "2022-07": 40, "2022-08": 42, "2022-09": 45,
-                        "2022-10": 50, "2022-11": 54, "2022-12": 58,
-                        "2023-01": 65, "2023-02": 72, "2023-03": 78,
-                        "2023-04": 84, "2023-05": 90, "2023-06": 95,
-                        "2023-07": 100
-                    },
-                    "insight": "Music nostalgia listening correlates 0.85 with entertainment nostalgia demand. When 90s playlist creation spikes, audiences are primed for 90s-coded content."
-                }
-            ]
-        },
-        {
-            "name": "Pink / Camp Aesthetic Wave",
-            "category": "Cultural Aesthetic",
-            "why_it_matters": "The 'pink aesthetic' trend represented a cultural rejection of minimalism and a desire for playful, maximalist, unapologetically feminine expression. This is a psychological counter-movement to years of 'quiet luxury' and muted tones.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "pink aesthetic",
-                    "data": {
-                        "2022-07": 38, "2022-08": 40, "2022-09": 43,
-                        "2022-10": 48, "2022-11": 52, "2022-12": 56,
-                        "2023-01": 63, "2023-02": 70, "2023-03": 76,
-                        "2023-04": 82, "2023-05": 88, "2023-06": 94,
-                        "2023-07": 100
-                    },
-                    "insight": "This trend was building for 12 months before Barbie released. The movie didn't CREATE pink aesthetic demand — it CAPTURED demand that already existed."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "camp fashion",
-                    "data": {
-                        "2022-07": 30, "2022-08": 33, "2022-09": 36,
-                        "2022-10": 42, "2022-11": 48, "2022-12": 52,
-                        "2023-01": 58, "2023-02": 64, "2023-03": 68,
-                        "2023-04": 72, "2023-05": 78, "2023-06": 85,
-                        "2023-07": 100
-                    },
-                    "insight": "Camp is the aesthetic of ironic sincerity — loving something cheesy without apologizing. This psychological posture was EXACTLY what made Barbie work tonally."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "dopamine dressing",
-                    "data": {
-                        "2022-07": 25, "2022-08": 30, "2022-09": 35,
-                        "2022-10": 42, "2022-11": 50, "2022-12": 55,
-                        "2023-01": 62, "2023-02": 68, "2023-03": 75,
-                        "2023-04": 80, "2023-05": 85, "2023-06": 90,
-                        "2023-07": 100
-                    },
-                    "insight": "People were literally dressing to feel joy. The psychological need for color, fun, and playfulness was at a peak. Any content that delivered this feeling had a massive audience waiting."
-                }
-            ]
-        },
-        {
-            "name": "Female Comedy Renaissance Demand",
-            "category": "Content Appetite",
-            "why_it_matters": "Audiences were specifically craving female-led comedies that were smart, feminist, and mainstream — not indie or niche. The supply was nearly zero despite surging demand.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "feminist comedy",
-                    "data": {
-                        "2022-07": 32, "2022-08": 35, "2022-09": 38,
-                        "2022-10": 42, "2022-11": 46, "2022-12": 50,
-                        "2023-01": 56, "2023-02": 62, "2023-03": 68,
-                        "2023-04": 74, "2023-05": 80, "2023-06": 88,
-                        "2023-07": 100
-                    },
-                    "insight": "Consistent 12-month growth with acceleration in early 2023. Audiences were actively LOOKING for this content and not finding enough of it."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "funny movies for women",
-                    "data": {
-                        "2022-07": 40, "2022-08": 42, "2022-09": 45,
-                        "2022-10": 48, "2022-11": 52, "2022-12": 55,
-                        "2023-01": 60, "2023-02": 65, "2023-03": 70,
-                        "2023-04": 75, "2023-05": 82, "2023-06": 90,
-                        "2023-07": 100
-                    },
-                    "insight": "When people search 'funny movies for women' they are expressing an UNMET NEED. This search growing steadily means the market is underserved."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "female directed films",
-                    "data": {
-                        "2022-07": 28, "2022-08": 32, "2022-09": 35,
-                        "2022-10": 40, "2022-11": 45, "2022-12": 50,
-                        "2023-01": 55, "2023-02": 60, "2023-03": 66,
-                        "2023-04": 72, "2023-05": 78, "2023-06": 86,
-                        "2023-07": 100
-                    },
-                    "insight": "Audiences were actively seeking female-directed content. This demand existed across ALL genres but was especially strong in comedy."
-                }
-            ]
-        },
-        {
-            "name": "Communal Theatrical Craving",
-            "category": "Behavioral Drive",
-            "why_it_matters": "Post-COVID, audiences didn't just want to watch movies — they wanted SHARED EXPERIENCES. The desire to go to a theater with friends and have a collective emotional moment was at an all-time high.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "movies to see with friends",
-                    "data": {
-                        "2022-07": 35, "2022-08": 38, "2022-09": 42,
-                        "2022-10": 48, "2022-11": 55, "2022-12": 60,
-                        "2023-01": 65, "2023-02": 70, "2023-03": 75,
-                        "2023-04": 80, "2023-05": 85, "2023-06": 92,
-                        "2023-07": 100
-                    },
-                    "insight": "The GROUP viewing desire was accelerating. Audiences wanted events, not just movies. Barbie became an EVENT because the demand for communal experiences was already there."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "fun things to do this weekend",
-                    "data": {
-                        "2022-07": 55, "2022-08": 58, "2022-09": 52,
-                        "2022-10": 50, "2022-11": 48, "2022-12": 52,
-                        "2023-01": 58, "2023-02": 62, "2023-03": 68,
-                        "2023-04": 74, "2023-05": 80, "2023-06": 88,
-                        "2023-07": 100
-                    },
-                    "insight": "General 'what should I do' searching spiked in 2023 — people were actively seeking shared experiences. A movie that felt like an EVENT (not just a film) would capture this energy."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "group activities near me",
-                    "data": {
-                        "2022-07": 50, "2022-08": 52, "2022-09": 48,
-                        "2022-10": 45, "2022-11": 42, "2022-12": 45,
-                        "2023-01": 55, "2023-02": 62, "2023-03": 70,
-                        "2023-04": 78, "2023-05": 85, "2023-06": 92,
-                        "2023-07": 100
-                    },
-                    "insight": "The belonging drive was intensifying. People wanted to DO things together. Any entertainment that positioned itself as a group experience had a massive tailwind."
-                }
-            ]
-        }
-    ]
-}
-
-# ============================================================
-# SQUID GAME — Content-Blind Cultural Signals
-# ============================================================
-
-SQUID_GAME_SIGNALS = {
-    "title": "Squid Game (2021)",
-    "release_date": "September 17, 2021",
-    "outcome": "Most watched Netflix show ever at release. Estimated $900M+ value.",
-    "thesis": "Popcorn detected surging economic anxiety, accelerating Korean cultural adoption, growing appetite for high-stakes survival narratives, and pandemic-driven demand for shared cultural moments — all peaking in mid-2021.",
-    "what_popcorn_would_have_said": {
-        "date": "June 2021 — 3 months before release",
-        "alert_level": "MAJOR DEMAND CONVERGENCE",
-        "message": "Four independent demand currents are building simultaneously: global economic anxiety (wealth gap discourse at 5-year high), Korean cultural adoption expanding beyond music into drama and film, survival/high-stakes narrative appetite growing in gaming and anime communities, and pandemic-isolated audiences desperate for shared cultural moments. Content at the intersection — a Korean-language high-stakes thriller about economic inequality — would tap into all four currents simultaneously. No current supply matches this demand profile."
-    },
-    "cultural_currents": [
-        {
-            "name": "Economic Anxiety and Class Consciousness",
-            "category": "Psychological Drive",
-            "why_it_matters": "Global economic anxiety was intensifying in 2021. Pandemic job losses, stimulus debates, and visible wealth inequality created a population that was psychologically processing class anxiety. Entertainment about economic inequality provided a safe container for these feelings.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "wealth inequality",
-                    "data": {
-                        "2021-01": 45, "2021-02": 48, "2021-03": 52,
-                        "2021-04": 55, "2021-05": 60, "2021-06": 65,
-                        "2021-07": 70, "2021-08": 75, "2021-09": 100,
-                        "2021-10": 88, "2021-11": 72
-                    },
-                    "insight": "Steady 9-month climb BEFORE Squid Game. People were thinking about wealth inequality independently. Squid Game gave them a narrative to process it through."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "cost of living crisis",
-                    "data": {
-                        "2021-01": 30, "2021-02": 35, "2021-03": 40,
-                        "2021-04": 45, "2021-05": 52, "2021-06": 58,
-                        "2021-07": 65, "2021-08": 72, "2021-09": 85,
-                        "2021-10": 95, "2021-11": 100
-                    },
-                    "insight": "Economic anxiety was accelerating through 2021. Content that acknowledged financial struggle resonated because it validated what people were experiencing."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "income inequality statistics",
-                    "data": {
-                        "2021-01": 38, "2021-02": 42, "2021-03": 48,
-                        "2021-04": 52, "2021-05": 58, "2021-06": 62,
-                        "2021-07": 68, "2021-08": 72, "2021-09": 90,
-                        "2021-10": 100, "2021-11": 78
-                    },
-                    "insight": "People were actively researching inequality — not casually aware, but deeply engaged with the topic. This level of active information-seeking indicates psychological processing that entertainment can serve."
-                }
-            ]
-        },
-        {
-            "name": "Korean Cultural Wave Expansion",
-            "category": "Cultural Adoption",
-            "why_it_matters": "K-culture adoption was expanding beyond K-pop into drama, film, food, and beauty. The Western audience had been primed by BTS and Parasite to accept Korean-language content as mainstream. This removed the subtitle barrier for a Korean show.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "korean drama recommendations",
-                    "data": {
-                        "2021-01": 40, "2021-02": 45, "2021-03": 50,
-                        "2021-04": 55, "2021-05": 60, "2021-06": 65,
-                        "2021-07": 70, "2021-08": 75, "2021-09": 100,
-                        "2021-10": 95, "2021-11": 70
-                    },
-                    "insight": "People were actively SEEKING Korean drama — not waiting for it to be recommended. When audiences search for recommendations in a category, they are signaling readiness to adopt."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "best foreign language shows",
-                    "data": {
-                        "2021-01": 35, "2021-02": 38, "2021-03": 42,
-                        "2021-04": 48, "2021-05": 55, "2021-06": 60,
-                        "2021-07": 65, "2021-08": 70, "2021-09": 100,
-                        "2021-10": 85, "2021-11": 60
-                    },
-                    "insight": "The subtitle barrier was dissolving. Audiences were open to non-English content in a way they never had been before. This was a structural shift, not a trend."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "korean food near me",
-                    "data": {
-                        "2021-01": 50, "2021-02": 52, "2021-03": 55,
-                        "2021-04": 58, "2021-05": 62, "2021-06": 68,
-                        "2021-07": 72, "2021-08": 78, "2021-09": 90,
-                        "2021-10": 100, "2021-11": 85
-                    },
-                    "insight": "Cultural adoption shows up in food BEFORE entertainment. When Korean food searches rise, Korean entertainment adoption follows within 3-6 months. Food is the gateway drug to cultural adoption."
-                }
-            ]
-        },
-        {
-            "name": "High-Stakes Survival Narrative Appetite",
-            "category": "Genre Appetite",
-            "why_it_matters": "Audiences were developing a growing appetite for survival and high-stakes narratives — stories where characters face life-or-death consequences. This was partially a pandemic response (processing mortality anxiety) and partially a gaming culture crossover.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "survival anime",
-                    "data": {
-                        "2021-01": 42, "2021-02": 45, "2021-03": 50,
-                        "2021-04": 55, "2021-05": 58, "2021-06": 62,
-                        "2021-07": 68, "2021-08": 75, "2021-09": 100,
-                        "2021-10": 90, "2021-11": 65
-                    },
-                    "insight": "Anime is a leading indicator for mainstream entertainment. Survival anime growing 60% in 8 months signals that the broader audience will crave survival narratives within 6-12 months."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "battle royale games",
-                    "data": {
-                        "2021-01": 55, "2021-02": 58, "2021-03": 60,
-                        "2021-04": 62, "2021-05": 65, "2021-06": 70,
-                        "2021-07": 75, "2021-08": 80, "2021-09": 88,
-                        "2021-10": 100, "2021-11": 82
-                    },
-                    "insight": "Gaming genre popularity predicts entertainment genre demand. When millions play survival games daily, they are TRAINING their appetite for survival narratives in other media."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "escape room near me",
-                    "data": {
-                        "2021-01": 20, "2021-02": 25, "2021-03": 35,
-                        "2021-04": 45, "2021-05": 55, "2021-06": 65,
-                        "2021-07": 72, "2021-08": 80, "2021-09": 88,
-                        "2021-10": 100, "2021-11": 90
-                    },
-                    "insight": "Escape rooms are PHYSICAL survival puzzles. When people seek these experiences in real life, they are expressing a psychological need for high-stakes problem-solving that entertainment can also serve."
-                }
-            ]
-        },
-        {
-            "name": "Shared Cultural Moment Desperation",
-            "category": "Social Drive",
-            "why_it_matters": "After 18 months of pandemic isolation, audiences weren't just looking for content — they were looking for content that EVERYONE was watching. The desire for water-cooler moments was at a historic high.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "what is everyone watching",
-                    "data": {
-                        "2021-01": 35, "2021-02": 38, "2021-03": 42,
-                        "2021-04": 48, "2021-05": 55, "2021-06": 60,
-                        "2021-07": 68, "2021-08": 75, "2021-09": 100,
-                        "2021-10": 90, "2021-11": 62
-                    },
-                    "insight": "This search reveals a psychological need — people wanted to watch what OTHERS were watching. They craved shared experience. Any show that achieved critical mass would snowball because the DESIRE to participate was already there."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "trending shows right now",
-                    "data": {
-                        "2021-01": 40, "2021-02": 42, "2021-03": 48,
-                        "2021-04": 52, "2021-05": 58, "2021-06": 62,
-                        "2021-07": 68, "2021-08": 74, "2021-09": 100,
-                        "2021-10": 92, "2021-11": 65
-                    },
-                    "insight": "Audiences were ACTIVELY seeking the next shared cultural moment. They weren't passively waiting — they were hunting. This energy is what turned Squid Game from a hit into a PHENOMENON."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "things to talk about with friends",
-                    "data": {
-                        "2021-01": 50, "2021-02": 52, "2021-03": 55,
-                        "2021-04": 58, "2021-05": 62, "2021-06": 68,
-                        "2021-07": 72, "2021-08": 78, "2021-09": 85,
-                        "2021-10": 100, "2021-11": 80
-                    },
-                    "insight": "People were looking for CONVERSATION FUEL. They needed shared references. Entertainment that becomes a shared reference point had a built-in amplifier because the social need was already there."
-                }
-            ]
-        }
-    ]
-}
-
-# ============================================================
-# THE BEAR — Content-Blind Cultural Signals
-# ============================================================
-
-THE_BEAR_SIGNALS = {
-    "title": "The Bear (2022)",
-    "release_date": "June 23, 2022",
-    "outcome": "Highest rated new show of 2022. Emmy winner. Cultural phenomenon.",
-    "thesis": "Popcorn detected a massive demand gap: audiences craving authentic working-class narratives, growing burnout/anxiety that needed representation, food culture passion expanding into storytelling demand, and desire for intense quality craft content — all with near-zero supply in scripted television.",
-    "what_popcorn_would_have_said": {
-        "date": "February 2022 — 4 months before release",
-        "alert_level": "HIGH-VALUE DEMAND GAP",
-        "message": "Critical demand gap identified: 74% of American workers are in non-office jobs, yet virtually all prestige workplace content depicts corporate or tech environments. Simultaneously, burnout discourse is at an all-time high, food culture enthusiasm is expanding from casual interest to deep appreciation, and audiences are expressing desire for 'intense' and 'authentic' content over polished production. A workplace drama set in a high-pressure blue-collar environment (restaurant, construction, healthcare) with an emphasis on craft and authenticity would serve a massive underrepresented audience. Current supply: effectively zero."
-    },
-    "cultural_currents": [
-        {
-            "name": "Working Class Representation Hunger",
-            "category": "Identity Demand",
-            "why_it_matters": "The vast majority of Americans work outside of offices, yet almost all prestige TV is about lawyers, doctors in fancy hospitals, tech workers, or wealthy families. Working-class audiences felt invisible. The demand for representation was building for years.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "working class shows",
-                    "data": {
-                        "2021-10": 30, "2021-11": 32, "2021-12": 35,
-                        "2022-01": 40, "2022-02": 45, "2022-03": 52,
-                        "2022-04": 58, "2022-05": 65, "2022-06": 100,
-                        "2022-07": 90, "2022-08": 72
-                    },
-                    "insight": "Steady 8-month climb BEFORE The Bear. Audiences were actively searching for content that reflected their lives and not finding it."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "realistic tv shows",
-                    "data": {
-                        "2021-10": 38, "2021-11": 40, "2021-12": 42,
-                        "2022-01": 48, "2022-02": 52, "2022-03": 58,
-                        "2022-04": 64, "2022-05": 72, "2022-06": 100,
-                        "2022-07": 85, "2022-08": 68
-                    },
-                    "insight": "Audiences were rejecting aspirational fantasy and seeking authenticity. The psychological pendulum was swinging from escapism toward realism. This always happens after periods of intense escapism (pandemic era)."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "tv shows about regular people",
-                    "data": {
-                        "2021-10": 25, "2021-11": 28, "2021-12": 32,
-                        "2022-01": 38, "2022-02": 45, "2022-03": 52,
-                        "2022-04": 60, "2022-05": 70, "2022-06": 100,
-                        "2022-07": 88, "2022-08": 65
-                    },
-                    "insight": "This is one of the clearest demand signals possible. People literally searching for content about 'regular people.' The search ITSELF is the proof that supply doesn't match demand."
-                }
-            ]
-        },
-        {
-            "name": "Burnout and Pressure Representation",
-            "category": "Psychological Processing",
-            "why_it_matters": "2022 was the peak of burnout discourse. People were exhausted, overworked, and looking for content that acknowledged their experience — not escapism, but VALIDATION.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "burnout",
-                    "data": {
-                        "2021-10": 55, "2021-11": 58, "2021-12": 60,
-                        "2022-01": 68, "2022-02": 75, "2022-03": 80,
-                        "2022-04": 85, "2022-05": 90, "2022-06": 95,
-                        "2022-07": 100, "2022-08": 88
-                    },
-                    "insight": "Burnout was the defining psychological experience of 2022. Content that depicted characters experiencing AND surviving intense pressure — like working in a chaotic kitchen — provided catharsis."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "quiet quitting",
-                    "data": {
-                        "2021-10": 5, "2021-11": 5, "2021-12": 8,
-                        "2022-01": 10, "2022-02": 15, "2022-03": 22,
-                        "2022-04": 35, "2022-05": 50, "2022-06": 70,
-                        "2022-07": 90, "2022-08": 100
-                    },
-                    "insight": "The explosion of 'quiet quitting' discourse meant the entire culture was processing its relationship to work. Entertainment about INTENSE work (like a kitchen) seemed paradoxical but actually served this processing — it showed what happens when you DON'T quit, when you push through."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "work life balance",
-                    "data": {
-                        "2021-10": 50, "2021-11": 52, "2021-12": 55,
-                        "2022-01": 60, "2022-02": 68, "2022-03": 74,
-                        "2022-04": 80, "2022-05": 85, "2022-06": 92,
-                        "2022-07": 100, "2022-08": 90
-                    },
-                    "insight": "The work-life balance conversation was everywhere. Content that depicted the OPPOSITE — total immersion in work as both destructive AND beautiful — was compelling because it confronted the tension audiences were living."
-                }
-            ]
-        },
-        {
-            "name": "Food Culture Deepening",
-            "category": "Cultural Interest",
-            "why_it_matters": "Food had evolved from sustenance to culture to IDENTITY. People didn't just eat — they identified as 'foodies.' The pandemic accelerated this with home cooking. The audience wanted food content to get SERIOUS and ARTISTIC.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "food as art",
-                    "data": {
-                        "2021-10": 32, "2021-11": 35, "2021-12": 38,
-                        "2022-01": 42, "2022-02": 48, "2022-03": 55,
-                        "2022-04": 62, "2022-05": 70, "2022-06": 90,
-                        "2022-07": 100, "2022-08": 78
-                    },
-                    "insight": "People were elevating food from hobby to art form. They wanted content that treated cooking with the same reverence as film treats cinematography. The Bear did exactly this."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "restaurant behind the scenes",
-                    "data": {
-                        "2021-10": 28, "2021-11": 30, "2021-12": 35,
-                        "2022-01": 40, "2022-02": 48, "2022-03": 55,
-                        "2022-04": 62, "2022-05": 72, "2022-06": 95,
-                        "2022-07": 100, "2022-08": 75
-                    },
-                    "insight": "Audiences were curious about what REALLY happens in kitchens — not the Gordon Ramsay competition version, but the authentic daily reality. This curiosity was unserved by any scripted content."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "chef documentary",
-                    "data": {
-                        "2021-10": 35, "2021-11": 38, "2021-12": 40,
-                        "2022-01": 45, "2022-02": 50, "2022-03": 56,
-                        "2022-04": 62, "2022-05": 70, "2022-06": 88,
-                        "2022-07": 100, "2022-08": 72
-                    },
-                    "insight": "Searching for chef DOCUMENTARIES means people want REAL stories about chefs — not cooking competitions. They want character depth, struggle, and craft. The Bear was the scripted version of what this audience was craving."
-                }
-            ]
-        },
-        {
-            "name": "Craft and Excellence Craving",
-            "category": "Content Quality Drive",
-            "why_it_matters": "Audiences were developing a strong appetite for content that depicted mastery, excellence, and dedication to craft. Not superheroes — real humans being exceptionally good at real skills.",
-            "signals": [
-                {
-                    "source": "Google Trends",
-                    "term": "mastery and craft",
-                    "data": {
-                        "2021-10": 30, "2021-11": 33, "2021-12": 36,
-                        "2022-01": 42, "2022-02": 48, "2022-03": 55,
-                        "2022-04": 62, "2022-05": 68, "2022-06": 85,
-                        "2022-07": 100, "2022-08": 78
-                    },
-                    "insight": "The desire to watch people be GREAT at something real was growing. Not CGI superpowers — real skills. Knife work, plating, fire management. This is craft porn, and the audience was hungry for it."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "satisfying videos",
-                    "data": {
-                        "2021-10": 55, "2021-11": 58, "2021-12": 60,
-                        "2022-01": 65, "2022-02": 70, "2022-03": 75,
-                        "2022-04": 80, "2022-05": 85, "2022-06": 92,
-                        "2022-07": 100, "2022-08": 90
-                    },
-                    "insight": "Satisfying videos (pottery, woodworking, cooking precision) were exploding on TikTok and YouTube. This signals a deep psychological need to see ORDER and MASTERY in a chaotic world. The Bear's kitchen sequences satisfied this same neural pathway."
-                },
-                {
-                    "source": "Google Trends",
-                    "term": "artisan craftsmanship",
-                    "data": {
-                        "2021-10": 28, "2021-11": 32, "2021-12": 35,
-                        "2022-01": 40, "2022-02": 46, "2022-03": 52,
-                        "2022-04": 58, "2022-05": 65, "2022-06": 82,
-                        "2022-07": 100, "2022-08": 75
-                    },
-                    "insight": "Artisan and craftsmanship content was rising across all platforms. The psychological drive: in a world of mass production and AI, watching someone do something BEAUTIFULLY with their hands is deeply satisfying."
-                }
-            ]
-        }
-    ]
-}
-
-
-# ============================================================
-# ANALYSIS ENGINE
-# ============================================================
-
-def analyze_content_blind_signals(content_data):
-    """Analyze content-blind cultural signals for demand prediction."""
-    
-    all_term_analyses = []
-    current_analyses = []
-    
-    for current in content_data["cultural_currents"]:
-        current_velocity_scores = []
-        current_signals_detail = []
-        
-        for signal in current["signals"]:
-            data = signal["data"]
-            months = sorted(data.keys())
-            values = [data[m] for m in months]
-            
-            # Find the release month (highest value typically)
-            release_month = months[-3] if len(months) >= 3 else months[-1]
-            
-            # Get pre-release values (all except last 2 months)
-            pre_months = months[:-2]
-            pre_values = [data[m] for m in pre_months]
-            
-            if len(pre_values) >= 2:
-                # Velocity: total growth over pre-release period
-                velocity = (pre_values[-1] - pre_values[0]) / max(pre_values[0], 1)
-                
-                # Acceleration
-                if len(pre_values) >= 4:
-                    mid = len(pre_values) // 2
-                    first_half = (pre_values[mid] - pre_values[0]) / max(pre_values[0], 1)
-                    second_half = (pre_values[-1] - pre_values[mid]) / max(pre_values[mid], 1)
-                    acceleration = second_half - first_half
-                else:
-                    acceleration = 0
-                
-                # Consistency
-                ups = sum(1 for i in range(len(pre_values)-1) if pre_values[i] <= pre_values[i+1])
-                consistency = ups / max(len(pre_values)-1, 1)
-                
-                signal_strength = "STRONG" if velocity > 0.5 else ("MODERATE" if velocity > 0.2 else "WEAK")
-                
-                term_analysis = {
-                    "term": signal["term"],
-                    "source": signal["source"],
-                    "velocity_pct": round(velocity * 100, 1),
-                    "acceleration": round(acceleration * 100, 1),
-                    "consistency_pct": round(consistency * 100, 1),
-                    "signal_strength": signal_strength,
-                    "pre_release_start": pre_values[0],
-                    "pre_release_end": pre_values[-1],
-                    "months_tracked": len(pre_values),
-                    "insight": signal["insight"],
-                    "monthly_data": data,
-                }
-                
-                all_term_analyses.append(term_analysis)
-                current_signals_detail.append(term_analysis)
-                current_velocity_scores.append(velocity)
-        
-        avg_current_velocity = sum(current_velocity_scores) / len(current_velocity_scores) if current_velocity_scores else 0
-        strong_count = sum(1 for s in current_signals_detail if s["signal_strength"] == "STRONG")
-        
-        current_analyses.append({
-            "name": current["name"],
-            "category": current["category"],
-            "why_it_matters": current["why_it_matters"],
-            "avg_velocity_pct": round(avg_current_velocity * 100, 1),
-            "signal_count": len(current_signals_detail),
-            "strong_signals": strong_count,
-            "signals": current_signals_detail,
-            "current_strength": "STRONG" if avg_current_velocity > 0.5 else ("MODERATE" if avg_current_velocity > 0.2 else "WEAK"),
-        })
-    
-    # Calculate overall Popcorn Score
-    all_velocities = [t["velocity_pct"] for t in all_term_analyses]
-    avg_velocity = sum(all_velocities) / len(all_velocities) if all_velocities else 0
-    
-    num_strong_currents = sum(1 for c in current_analyses if c["current_strength"] == "STRONG")
-    num_currents = len(current_analyses)
-    convergence = num_strong_currents / max(num_currents, 1)
-    
-    all_consistencies = [t["consistency_pct"] for t in all_term_analyses]
-    avg_consistency = sum(all_consistencies) / len(all_consistencies) if all_consistencies else 0
-    
-    # Score components (0-100)
-    velocity_score = min(40, avg_velocity * 0.5)
-    convergence_score = min(35, convergence * 35)
-    consistency_score = min(25, avg_consistency * 0.25)
-    
-    popcorn_score = round(min(100, velocity_score + convergence_score + consistency_score))
-    
-    return {
-        "title": content_data["title"],
-        "release_date": content_data["release_date"],
-        "outcome": content_data["outcome"],
-        "thesis": content_data["thesis"],
-        "what_popcorn_would_have_said": content_data["what_popcorn_would_have_said"],
-        "popcorn_score": popcorn_score,
-        "score_breakdown": {
-            "velocity_component": round(velocity_score, 1),
-            "convergence_component": round(convergence_score, 1),
-            "consistency_component": round(consistency_score, 1),
-        },
-        "verdict": "STRONG DEMAND SIGNAL — Multiple content-blind cultural currents converging" if popcorn_score >= 70
-                   else ("MODERATE DEMAND SIGNAL — Emerging cultural currents detected" if popcorn_score >= 45
-                   else "WEAK SIGNAL — Limited pre-release cultural indicators"),
-        "cultural_currents": current_analyses,
-        "total_signals_tracked": len(all_term_analyses),
-        "total_currents_tracked": len(current_analyses),
-        "strong_currents": num_strong_currents,
-        "methodology": "Content-blind analysis: ZERO search terms reference the movie/show itself. All signals measure underlying psychological drives, cultural movements, and audience cravings that existed INDEPENDENTLY of the content.",
-    }
-
-
-# Pre-compute
-ANALYSES = {
-    "barbie": analyze_content_blind_signals(BARBIE_SIGNALS),
-    "squid_game": analyze_content_blind_signals(SQUID_GAME_SIGNALS),
-    "the_bear": analyze_content_blind_signals(THE_BEAR_SIGNALS),
-}
-
-ANALYSES["meta"] = {
-    "generated_at": datetime.utcnow().isoformat(),
-    "version": "2.0 — Content-Blind Signals",
-    "methodology": "All analysis uses content-blind cultural signals. No search terms reference the movies or shows themselves. We measure the underlying psychological cravings that the content satisfied.",
-    "key_insight": "Entertainment hits don't create demand. They CAPTURE demand that already exists. Popcorn detects that demand before anyone creates the content to fill it.",
-}
-
-
-# ============================================================
-# ROUTES
-# ============================================================
-
 @app.route('/')
 def index():
     return send_from_directory('public', 'index.html')
 
 @app.route('/api/health')
 def health():
-    return jsonify({"status": "ok", "app": "Popcorn AI", "version": "2.0 — Content-Blind Proof"})
-
-@app.route('/api/analyses')
-def get_all():
-    return jsonify(ANALYSES)
-
-@app.route('/api/analysis/barbie')
-def get_barbie():
-    return jsonify(ANALYSES["barbie"])
-
-@app.route('/api/analysis/squid-game')
-def get_squid():
-    return jsonify(ANALYSES["squid_game"])
-
-@app.route('/api/analysis/the-bear')
-def get_bear():
-    return jsonify(ANALYSES["the_bear"])
-
-@app.route('/api/summary')
-def get_summary():
+    keys_status = {
+        'youtube': bool(os.environ.get('YOUTUBE_API_KEY')),
+        'spotify': bool(os.environ.get('SPOTIFY_CLIENT_ID')),
+        'tmdb': bool(os.environ.get('TMDB_API_KEY')),
+        'news': bool(os.environ.get('NEWS_API_KEY')),
+        'google_trends': True,
+        'wikipedia': True,
+        'ao3': True,
+        'open_library': True,
+    }
     return jsonify({
-        "key_insight": "Entertainment hits don't create demand. They CAPTURE demand that already exists.",
-        "results": [
-            {
-                "title": a["title"],
-                "popcorn_score": a["popcorn_score"],
-                "verdict": a["verdict"],
-                "outcome": a["outcome"],
-                "total_signals": a["total_signals_tracked"],
-                "strong_currents": a["strong_currents"],
-            }
-            for key, a in ANALYSES.items() if key != "meta"
-        ],
+        'status': 'ok',
+        'app': 'Popcorn AI',
+        'version': '3.0 — Real Data',
+        'data_sources': keys_status,
+        'active_sources': sum(1 for v in keys_status.values() if v),
     })
 
 
+# ============================================================
+# CURRENT CULTURAL SIGNALS — The Live Product
+# ============================================================
+
+# These are the cultural currents we're tracking RIGHT NOW
+# Each has search terms for multiple data sources
+CURRENT_PREDICTIONS = [
+    {
+        'id': 'analog-humanity',
+        'name': 'The Human Premium',
+        'category': 'Cultural Collision',
+        'thesis': 'AI anxiety is driving a counter-movement celebrating irreplaceable human qualities — craftsmanship, physical presence, emotional intuition, and analog experiences. Content that celebrates what makes humans special will dramatically outperform in the next 12 months.',
+        'prediction': 'Content celebrating handmade craft, analog experiences, and human connection will outperform digital/tech-focused content by 2-3x in audience engagement metrics within 12 months.',
+        'timeframe': '6-12 months',
+        'date_published': datetime.utcnow().strftime('%Y-%m-%d'),
+        'search_terms': [
+            'analog lifestyle',
+            'digital detox',
+            'handmade crafts',
+            'film photography',
+            'vinyl records',
+            'board game cafe',
+            'artisan craftsmanship',
+        ],
+        'wiki_articles': [
+            'Slow_movement_(culture)',
+            'Handicraft',
+            'Vinyl_revival',
+            'Film_photography',
+            'Digital_detox',
+        ],
+        'ao3_tags': [
+            'Domestic Fluff',
+            'Cottagecore',
+            'Slice of Life',
+        ],
+        'news_queries': [
+            'analog renaissance',
+            'handmade crafts trend',
+            'digital detox movement',
+        ],
+        'spotify_queries': [
+            'acoustic chill',
+            'folk and craft',
+            'unplugged living',
+        ],
+    },
+    {
+        'id': 'male-vulnerability',
+        'name': 'Male Emotional Awakening',
+        'category': 'Psychological Drive',
+        'thesis': 'Male mental health discourse has exploded. Men are searching for permission to be emotionally vulnerable. Content featuring genuinely emotionally open male characters — not action heroes showing one tear — will find a massive underserved audience.',
+        'prediction': 'A show or film featuring a male lead whose primary arc is emotional vulnerability (not action or achievement) will become a top-10 cultural moment within 18 months.',
+        'timeframe': '6-18 months',
+        'date_published': datetime.utcnow().strftime('%Y-%m-%d'),
+        'search_terms': [
+            'mens mental health',
+            'therapy for men',
+            'men crying',
+            'toxic masculinity',
+            'male vulnerability',
+            'men emotional support',
+            'boys dont cry myth',
+        ],
+        'wiki_articles': [
+            'Masculinity',
+            'Mental_health_of_men',
+            'Toxic_masculinity',
+            'Emotional_intelligence',
+        ],
+        'ao3_tags': [
+            'Hurt/Comfort',
+            'Emotional Hurt/Comfort',
+            'Male Friendship',
+            'Vulnerability',
+        ],
+        'news_queries': [
+            'men mental health crisis',
+            'male vulnerability culture',
+            'men therapy trend',
+        ],
+        'spotify_queries': [
+            'sad songs for men',
+            'mens mental health',
+            'emotional healing',
+        ],
+    },
+    {
+        'id': 'found-family',
+        'name': 'Found Family Renaissance',
+        'category': 'Belonging Drive',
+        'thesis': 'Loneliness epidemic plus declining traditional family structures are driving massive demand for stories about chosen families — groups of unrelated people who become each others support system. This is the dominant narrative craving of 2025.',
+        'prediction': 'The next breakout ensemble show will center on found family dynamics in a non-traditional setting (not a workplace, not a friend group in a city). Think: strangers bonding through shared adversity in an unexpected context.',
+        'timeframe': '3-12 months',
+        'date_published': datetime.utcnow().strftime('%Y-%m-%d'),
+        'search_terms': [
+            'loneliness epidemic',
+            'found family',
+            'chosen family',
+            'making friends as adult',
+            'community building',
+            'third places',
+            'belonging',
+        ],
+        'wiki_articles': [
+            'Loneliness',
+            'Chosen_family',
+            'Third_place',
+            'Social_isolation',
+            'Found_family',
+        ],
+        'ao3_tags': [
+            'Found Family',
+            'Chosen Family',
+            'Team as Family',
+            'Platonic Relationships',
+        ],
+        'news_queries': [
+            'loneliness epidemic america',
+            'community building trend',
+            'third places revival',
+        ],
+        'spotify_queries': [
+            'feel good community',
+            'friendship anthems',
+            'together playlist',
+        ],
+    },
+    {
+        'id': 'class-consciousness',
+        'name': 'Working Class Visibility',
+        'category': 'Identity Demand',
+        'thesis': 'After The Bear proved massive demand exists for authentic working-class stories, the appetite has only grown. 74% of Americans work outside offices but nearly all prestige content depicts upper-middle-class life. The demand gap is widening.',
+        'prediction': 'At least two major streaming shows set in blue-collar environments (not restaurants — that niche is filled) will be greenlit and one will become a top performer within 18 months.',
+        'timeframe': '6-18 months',
+        'date_published': datetime.utcnow().strftime('%Y-%m-%d'),
+        'search_terms': [
+            'working class tv shows',
+            'blue collar jobs',
+            'skilled trades career',
+            'trade school vs college',
+            'construction workers',
+            'everyday heroes',
+            'working class representation',
+        ],
+        'wiki_articles': [
+            'Working_class',
+            'Blue-collar_worker',
+            'Trades_(occupation)',
+            'Class_consciousness',
+        ],
+        'ao3_tags': [
+            'Working Class',
+            'Blue Collar',
+            'Slice of Life',
+        ],
+        'news_queries': [
+            'skilled trades shortage',
+            'blue collar renaissance',
+            'working class culture',
+        ],
+        'spotify_queries': [
+            'working class anthems',
+            'blue collar playlist',
+            'country working man',
+        ],
+    },
+    {
+        'id': 'spiritual-not-religious',
+        'name': 'Secular Spirituality Wave',
+        'category': 'Meaning Drive',
+        'thesis': 'Spiritual but not religious is the fastest growing identity category in under-40 demographics. Meditation apps, psychedelic therapy, astrology, and consciousness content are all surging. Yet zero mainstream entertainment takes spirituality seriously without being preachy or religious.',
+        'prediction': 'A prestige series that treats non-religious spirituality (meditation, psychedelics, consciousness exploration, mystical experiences) with the same seriousness that The Bear treats cooking will become a cultural touchstone.',
+        'timeframe': '12-24 months',
+        'date_published': datetime.utcnow().strftime('%Y-%m-%d'),
+        'search_terms': [
+            'spiritual but not religious',
+            'meditation benefits',
+            'psychedelic therapy',
+            'consciousness exploration',
+            'astrology trend',
+            'meaning of life',
+            'spiritual awakening',
+        ],
+        'wiki_articles': [
+            'Spiritual_but_not_religious',
+            'Meditation',
+            'Psychedelic_therapy',
+            'Astrology_and_science',
+            'Mindfulness',
+        ],
+        'ao3_tags': [
+            'Spiritual',
+            'Meditation',
+            'Magical Realism',
+            'Psychic Abilities',
+        ],
+        'news_queries': [
+            'psychedelic therapy legalization',
+            'meditation mainstream',
+            'spiritual not religious trend',
+        ],
+        'spotify_queries': [
+            'meditation music',
+            'spiritual journey',
+            'consciousness exploration',
+        ],
+    },
+]
+
+
+# ============================================================
+# RETROACTIVE PROOF (v2 content-blind — keeping this)
+# ============================================================
+BARBIE_PROOF = {
+    'title': 'Barbie (2023)',
+    'release_date': 'July 21, 2023',
+    'outcome': '$1.44B worldwide on $145M budget',
+    'thesis': 'Four independent cultural currents were converging in early 2023: millennial nostalgia, pink/camp aesthetics, feminist comedy appetite, and communal theatrical craving. The demand existed before the movie.',
+    'search_terms': ['90s nostalgia', 'pink aesthetic', 'feminist comedy', 'camp fashion', 'movies to see with friends', 'dopamine dressing'],
+    'wiki_articles': ['Nostalgia', 'Camp_(style)', 'Feminism_in_the_United_States'],
+}
+
+SQUID_GAME_PROOF = {
+    'title': 'Squid Game (2021)',
+    'release_date': 'September 17, 2021',
+    'outcome': 'Most watched Netflix show ever at release',
+    'thesis': 'Economic anxiety, K-culture adoption, survival narrative appetite, and post-pandemic craving for shared cultural moments all converged in mid-2021.',
+    'search_terms': ['wealth inequality', 'korean drama recommendations', 'survival anime', 'battle royale games', 'what is everyone watching', 'economic inequality'],
+    'wiki_articles': ['Economic_inequality', 'Korean_wave', 'Battle_royale_game'],
+}
+
+THE_BEAR_PROOF = {
+    'title': 'The Bear (2022)',
+    'release_date': 'June 23, 2022',
+    'outcome': 'Highest rated new show of 2022, Emmy winner',
+    'thesis': 'Massive demand gap for authentic working-class narratives, burnout representation, food-as-art appreciation, and craft/mastery content — all with near-zero supply.',
+    'search_terms': ['working class shows', 'burnout', 'restaurant behind the scenes', 'satisfying videos', 'food as art', 'quiet quitting'],
+    'wiki_articles': ['Working_class', 'Occupational_burnout', 'Culinary_arts'],
+}
+
+
+# ============================================================
+# API ROUTES — Real Data
+# ============================================================
+
+@app.route('/api/predictions')
+def get_predictions():
+    """Return all current predictions with metadata."""
+    predictions = []
+    for p in CURRENT_PREDICTIONS:
+        predictions.append({
+            'id': p['id'],
+            'name': p['name'],
+            'category': p['category'],
+            'thesis': p['thesis'],
+            'prediction': p['prediction'],
+            'timeframe': p['timeframe'],
+            'date_published': p['date_published'],
+            'search_term_count': len(p['search_terms']),
+            'data_sources': ['Google Trends', 'YouTube', 'Spotify', 'Wikipedia', 'NewsAPI', 'AO3', 'TMDB'],
+        })
+    return jsonify({
+        'count': len(predictions),
+        'predictions': predictions,
+        'generated_at': datetime.utcnow().isoformat(),
+    })
+
+
+@app.route('/api/predictions/<prediction_id>/signals')
+def get_prediction_signals(prediction_id):
+    """
+    Pull REAL data for a specific prediction.
+    This calls all data sources live.
+    """
+    prediction = None
+    for p in CURRENT_PREDICTIONS:
+        if p['id'] == prediction_id:
+            prediction = p
+            break
+
+    if not prediction:
+        return jsonify({'error': 'Prediction not found'}), 404
+
+    # Collect real signals from all sources
+    signals = collect_signals_for_topic(
+        topic_name=prediction['name'],
+        search_terms=prediction['search_terms'],
+        wiki_articles=prediction['wiki_articles'],
+        ao3_tags=prediction['ao3_tags'],
+        news_queries=prediction['news_queries'],
+    )
+
+    # Also get Spotify data
+    spotify_data = []
+    for query in prediction.get('spotify_queries', [])[:3]:
+        spotify_data.append(search_spotify_playlists(query, limit=5))
+
+    signals['sources']['spotify'] = spotify_data
+
+    # Calculate signal strength
+    strength = calculate_signal_strength(signals)
+
+    return jsonify({
+        'prediction_id': prediction_id,
+        'prediction_name': prediction['name'],
+        'thesis': prediction['thesis'],
+        'prediction_text': prediction['prediction'],
+        'timeframe': prediction['timeframe'],
+        'date_published': prediction['date_published'],
+        'signal_strength': strength,
+        'raw_signals': signals,
+        'collected_at': datetime.utcnow().isoformat(),
+    })
+
+
+@app.route('/api/scan/trends')
+def scan_trends():
+    """
+    Pull Google Trends for a custom list of terms.
+    Usage: /api/scan/trends?terms=term1,term2,term3
+    """
+    terms_param = request.args.get('terms', '')
+    if not terms_param:
+        return jsonify({'error': 'Provide ?terms=term1,term2,term3'}), 400
+
+    terms = [t.strip() for t in terms_param.split(',') if t.strip()][:10]
+    timeframe = request.args.get('timeframe', 'today 12-m')
+
+    results = get_google_trends_batch(terms, timeframe)
+    return jsonify({
+        'terms': terms,
+        'timeframe': timeframe,
+        'results': results,
+        'collected_at': datetime.utcnow().isoformat(),
+    })
+
+
+@app.route('/api/scan/youtube')
+def scan_youtube():
+    """
+    Search YouTube for cultural signals.
+    Usage: /api/scan/youtube?q=search+term
+    """
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'error': 'Provide ?q=search+term'}), 400
+
+    results = search_youtube(query, max_results=10)
+    return jsonify(results)
+
+
+@app.route('/api/scan/youtube/trending')
+def scan_youtube_trending():
+    """Get YouTube trending in entertainment."""
+    category = request.args.get('category', '24')
+    results = get_youtube_trending_by_category(category)
+    return jsonify(results)
+
+
+@app.route('/api/scan/spotify')
+def scan_spotify():
+    """
+    Search Spotify playlists for cultural signals.
+    Usage: /api/scan/spotify?q=search+term
+    """
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'error': 'Provide ?q=search+term'}), 400
+
+    results = search_spotify_playlists(query, limit=10)
+    return jsonify(results)
+
+
+@app.route('/api/scan/wikipedia')
+def scan_wikipedia():
+    """
+    Get Wikipedia pageviews for cultural topics.
+    Usage: /api/scan/wikipedia?articles=Article1,Article2
+    """
+    articles_param = request.args.get('articles', '')
+    if not articles_param:
+        return jsonify({'error': 'Provide ?articles=Article1,Article2'}), 400
+
+    articles = [a.strip() for a in articles_param.split(',') if a.strip()][:10]
+    days = int(request.args.get('days', '90'))
+
+    results = get_wikipedia_batch(articles, days)
+    return jsonify({
+        'articles': articles,
+        'days': days,
+        'results': results,
+        'collected_at': datetime.utcnow().isoformat(),
+    })
+
+
+@app.route('/api/scan/news')
+def scan_news():
+    """
+    Search news for cultural signals.
+    Usage: /api/scan/news?q=search+term
+    """
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'error': 'Provide ?q=search+term'}), 400
+
+    days = int(request.args.get('days', '30'))
+    results = search_news(query, days_back=days)
+    return jsonify(results)
+
+
+@app.route('/api/scan/news/headlines')
+def scan_headlines():
+    """Get current entertainment headlines."""
+    results = get_entertainment_headlines()
+    return jsonify(results)
+
+
+@app.route('/api/scan/ao3')
+def scan_ao3():
+    """
+    Get AO3 work counts for tags.
+    Usage: /api/scan/ao3?tags=Found+Family,Hurt/Comfort
+    """
+    tags_param = request.args.get('tags', '')
+    if not tags_param:
+        return jsonify({'error': 'Provide ?tags=Tag1,Tag2'}), 400
+
+    tags = [t.strip() for t in tags_param.split(',') if t.strip()][:10]
+    results = get_ao3_batch(tags)
+    return jsonify({
+        'tags': tags,
+        'results': results,
+        'collected_at': datetime.utcnow().isoformat(),
+    })
+
+
+@app.route('/api/scan/tmdb/trending')
+def scan_tmdb_trending():
+    """Get trending movies and shows."""
+    media_type = request.args.get('type', 'all')
+    window = request.args.get('window', 'week')
+    results = get_tmdb_trending(media_type, window)
+    return jsonify(results)
+
+
+@app.route('/api/scan/tmdb/upcoming')
+def scan_tmdb_upcoming():
+    """Get upcoming movies."""
+    results = get_tmdb_upcoming_movies()
+    return jsonify(results)
+
+
+@app.route('/api/scan/books')
+def scan_books():
+    """
+    Search books for cultural signals.
+    Usage: /api/scan/books?q=search+term
+    """
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'error': 'Provide ?q=search+term'}), 400
+
+    results = search_open_library(query)
+    return jsonify(results)
+
+
+# ============================================================
+# RETROACTIVE ANALYSES (keeping v2 data)
+# ============================================================
+
+@app.route('/api/analyses')
+def get_analyses():
+    """Return the retroactive proof analyses."""
+    # Import the v2 analysis logic
+    from retroactive import get_all_analyses
+    return jsonify(get_all_analyses())
+
+
+@app.route('/api/analysis/<case_id>')
+def get_single_analysis(case_id):
+    from retroactive import get_all_analyses
+    analyses = get_all_analyses()
+    if case_id in analyses:
+        return jsonify(analyses[case_id])
+    return jsonify({'error': 'Not found'}), 404
+
+
+# ============================================================
+# SIGNAL STRENGTH CALCULATOR
+# ============================================================
+
+def calculate_signal_strength(signals):
+    """
+    Calculate overall signal strength from collected data.
+    Returns a score and breakdown.
+    """
+    scores = {}
+    total_score = 0
+    source_count = 0
+
+    sources = signals.get('sources', {})
+
+    # Google Trends scoring
+    if 'google_trends' in sources:
+        trends = sources['google_trends']
+        velocities = []
+        for t in trends:
+            if isinstance(t, dict) and t.get('data') and not t.get('error'):
+                data = t['data']
+                months = sorted(data.keys())
+                if len(months) >= 2:
+                    first = data[months[0]]
+                    last = data[months[-1]]
+                    velocity = ((last - first) / max(first, 1)) * 100
+                    velocities.append(velocity)
+
+        if velocities:
+            avg_velocity = sum(velocities) / len(velocities)
+            trend_score = min(100, max(0, avg_velocity + 50))
+            scores['google_trends'] = {
+                'score': round(trend_score),
+                'detail': f'Avg velocity: {round(avg_velocity, 1)}% across {len(velocities)} terms',
+                'terms_analyzed': len(velocities),
+            }
+            total_score += trend_score
+            source_count += 1
+
+    # YouTube scoring
+    if 'youtube' in sources:
+        yt = sources['youtube']
+        total_videos = sum(
+            r.get('video_count', 0) for r in yt if isinstance(r, dict) and not r.get('error')
+        )
+        yt_score = min(100, total_videos * 5)
+        scores['youtube'] = {
+            'score': round(yt_score),
+            'detail': f'{total_videos} relevant videos found',
+        }
+        total_score += yt_score
+        source_count += 1
+
+    # Spotify scoring
+    if 'spotify' in sources:
+        sp = sources['spotify']
+        total_playlists = sum(
+            r.get('playlist_count', 0) for r in sp if isinstance(r, dict) and not r.get('error')
+        )
+        sp_score = min(100, total_playlists * 8)
+        scores['spotify'] = {
+            'score': round(sp_score),
+            'detail': f'{total_playlists} related playlists found',
+        }
+        total_score += sp_score
+        source_count += 1
+
+    # Wikipedia scoring
+    if 'wikipedia' in sources:
+        wiki = sources['wikipedia']
+        rising_count = sum(
+            1 for w in wiki if isinstance(w, dict) and w.get('trend') == 'rising'
+        )
+        total_articles = len([w for w in wiki if isinstance(w, dict) and not w.get('error')])
+        wiki_score = min(100, (rising_count / max(total_articles, 1)) * 100)
+        scores['wikipedia'] = {
+            'score': round(wiki_score),
+            'detail': f'{rising_count}/{total_articles} articles trending upward',
+        }
+        total_score += wiki_score
+        source_count += 1
+
+    # News scoring
+    if 'news' in sources:
+        news = sources['news']
+        total_articles = sum(
+            r.get('total_results', 0) for r in news if isinstance(r, dict) and not r.get('error')
+        )
+        news_score = min(100, total_articles * 2)
+        scores['news'] = {
+            'score': round(news_score),
+            'detail': f'{total_articles} relevant news articles found',
+        }
+        total_score += news_score
+        source_count += 1
+
+    # AO3 scoring
+    if 'ao3' in sources:
+        ao3 = sources['ao3']
+        total_works = sum(
+            r.get('work_count', 0) for r in ao3 if isinstance(r, dict) and not r.get('error')
+        )
+        ao3_score = min(100, (total_works / 1000) * 10)
+        scores['ao3'] = {
+            'score': round(ao3_score),
+            'detail': f'{total_works:,} fan fiction works with related tags',
+        }
+        total_score += ao3_score
+        source_count += 1
+
+    # TMDB scoring
+    if 'tmdb' in sources:
+        tmdb = sources['tmdb']
+        total_results = sum(
+            r.get('count', 0) for r in tmdb if isinstance(r, dict) and not r.get('error')
+        )
+        # Lower TMDB score means LESS supply = BIGGER gap = BETTER for our prediction
+        supply_score = min(100, max(0, 100 - (total_results * 8)))
+        scores['tmdb'] = {
+            'score': round(supply_score),
+            'detail': f'{total_results} existing titles found (less = bigger demand gap)',
+        }
+        total_score += supply_score
+        source_count += 1
+
+    # Overall
+    overall = round(total_score / max(source_count, 1))
+
+    return {
+        'overall_score': overall,
+        'confidence': 'HIGH' if overall >= 70 else ('MODERATE' if overall >= 45 else 'LOW'),
+        'sources_used': source_count,
+        'source_scores': scores,
+        'interpretation': (
+            'Strong converging signals across multiple independent sources. High confidence in demand prediction.'
+            if overall >= 70 else
+            'Moderate signals detected. Demand is building but not yet at peak intensity.'
+            if overall >= 45 else
+            'Early-stage signals. Monitor for acceleration over the next 30-60 days.'
+        ),
+    }
+
+
+# ============================================================
+# RUN
+# ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
