@@ -1,7 +1,6 @@
 """
-Popcorn AI v4.0 — Auto-Discovery Engine
-GPT-4o analyzes signals from 8+ sources and generates
-predictions automatically. No human input needed.
+Popcorn AI v4.1 — Precision Engine
+More data. Sharper predictions. Better scoring.
 """
 
 from flask import Flask, jsonify, send_from_directory, request
@@ -43,56 +42,66 @@ discovery_cache = {
     'error': None,
 }
 
-THE_PROMPT = """You are Popcorn AI, an audience demand intelligence system for the entertainment industry.
+# ============================================================
+# THE PROMPT — This is the brain
+# ============================================================
+DISCOVERY_PROMPT = """You are Popcorn AI, the world's most precise audience demand intelligence system for entertainment.
 
-I'm giving you raw signals harvested from 8 data sources: YouTube trending videos, YouTube cultural searches, Spotify playlist trends, Wikipedia cultural article traffic, entertainment news headlines, cultural news articles, AO3 fan fiction tag popularity, and TMDB trending/upcoming content.
+I'm giving you raw signals from 8 data sources. Your job is to find SPECIFIC, ACTIONABLE cultural currents.
 
-Your job is to analyze ALL of these signals and identify CULTURAL CURRENTS — underlying psychological themes that connect multiple signals across multiple platforms.
+CRITICAL RULES:
+1. Be EXTREMELY SPECIFIC. Not "people want authentic content." Instead: "Women 25-38 are craving a workplace drama set in healthcare that depicts burnout with dark humor — similar to how Scrubs depicted hospital life but with the tonal intensity of The Bear."
+2. Every prediction must name a SPECIFIC format (series, film, limited series, documentary), SPECIFIC tone (dark comedy, prestige drama, light adventure), and SPECIFIC target demographic.
+3. Identify the EXACT demand gap — what audiences are searching for that ZERO current or announced content satisfies.
+4. Each current must be supported by signals from AT LEAST 3 different data sources.
+5. Rate convergence 1-10 where 10 means "this is pre-Barbie level convergence across every source."
+6. For each current, provide 8-12 specific search terms that would validate the demand.
+7. Name specific shows, films, or creators that partially satisfy this demand but don't fully capture it.
+8. Estimate audience size in millions of US adults.
 
-RULES:
-1. Only identify currents supported by 3+ INDEPENDENT data sources
-2. Focus on AUDIENCE PSYCHOLOGY not content analysis
-3. Each current must have a clear ENTERTAINMENT IMPLICATION
-4. Be SPECIFIC about what content would satisfy each craving
-5. Include a DEMAND GAP — what audiences want that nobody is making
-6. Rate confidence based on how many sources converge
-7. Compare to historical patterns (pre-Barbie, pre-Squid Game, pre-Bear)
+THINK LIKE A STUDIO HEAD WHO NEEDS TO GREENLIGHT A SPECIFIC PROJECT TOMORROW.
 
-Return a JSON object with this EXACT structure:
+Return JSON:
 {
   "scan_date": "YYYY-MM-DD",
   "total_signals_analyzed": <number>,
   "cultural_currents": [
     {
-      "name": "Name of the cultural current",
+      "name": "Highly specific name",
       "rank": 1,
-      "psychological_drive": "The underlying human need driving this",
+      "psychological_drive": "The exact human need — be specific about WHO feels it and WHY",
       "confidence": "HIGH/MODERATE/LOW",
-      "convergence_score": <number 1-10>,
-      "supporting_sources": ["YouTube", "Spotify", "Wikipedia", etc],
+      "convergence_score": <1-10>,
+      "supporting_sources": ["YouTube", "Spotify", etc],
       "source_count": <number>,
       "key_signals": [
-        "Specific signal from Source A",
-        "Specific signal from Source B",
-        "Specific signal from Source C"
+        "SPECIFIC signal with numbers: 'YouTube videos about X average 2M views in 30 days'",
+        "SPECIFIC signal: 'Spotify playlists tagged X grew from 50 to 200 in 6 months'",
+        "At least 6 specific signals with data"
       ],
-      "audience_size_estimate": "Description of how large the audience is",
-      "entertainment_prediction": "Specific prediction about what content will succeed",
-      "demand_gap": "What audiences want that nobody is currently making",
-      "content_opportunity": "Specific description of the content that would capture this demand",
-      "historical_parallel": "Which past hit followed a similar pattern and why",
-      "timeframe": "When this demand will peak",
-      "what_to_watch": "Specific metrics to monitor to track this current"
+      "target_demographic": "Exact age, gender, psychographic profile",
+      "audience_size_millions": <number>,
+      "format_recommendation": "8-episode limited series / feature film / docuseries / etc",
+      "tone_and_style": "Specific tone: 'dark comedy with warm core, like Fleabag meets workplace drama'",
+      "entertainment_prediction": "SPECIFIC: 'A [format] about [specific subject] targeting [specific audience] with [specific tone] will [specific outcome] within [timeframe]'",
+      "demand_gap": "EXACTLY what is missing — name existing content that comes close but doesn't fully satisfy",
+      "content_opportunity": "The EXACT show/film that should be made — describe it like a one-paragraph pitch",
+      "comparable_successes": ["Show A succeeded because...", "Film B captured similar demand by..."],
+      "historical_parallel": "Which past pattern this resembles and why",
+      "search_terms_to_track": ["term1", "term2", "term3", "at least 8 terms"],
+      "timeframe": "Specific: '6-9 months' not just 'soon'",
+      "risk_factors": ["What could prevent this from materializing"],
+      "what_to_watch": "Specific metrics and thresholds: 'If X search volume crosses Y, demand is confirmed'"
     }
   ],
-  "meta_analysis": "Overall summary of the cultural moment — what is the dominant psychological state of the American entertainment audience right now?",
-  "biggest_gap": "The single largest unserved demand in entertainment right now",
-  "collision_alert": "Are any currents converging in a way that resembles pre-Barbie or pre-Squid-Game conditions? If so, describe."
+  "meta_analysis": "2-3 paragraph analysis of the OVERALL cultural moment. What is the dominant psychological state? What macro forces are shaping entertainment demand? Be specific and insightful, not generic.",
+  "biggest_gap": "The single most valuable unserved demand. Describe the EXACT content that would fill it. Be so specific a producer could start developing it tomorrow.",
+  "collision_alert": "Are 3+ currents converging like pre-Barbie (nostalgia + aesthetic + feminist + communal) or pre-Squid-Game (economic anxiety + K-culture + survival + shared moment)? If yes, this is the most important finding. Describe it in detail with the specific content opportunity at the center."
 }
 
-Identify 5-8 cultural currents, ranked by confidence and convergence score.
+Generate 6-8 currents ranked by specificity and actionability. I'd rather have 4 razor-sharp predictions than 8 vague ones.
 
-HERE IS THE RAW SIGNAL DATA:
+RAW SIGNAL DATA:
 
 """
 
@@ -104,91 +113,134 @@ def run_auto_discovery():
     discovery_cache['error'] = None
 
     try:
-        # Step 1: Harvest all signals
-        print('[Popcorn] === AUTO-DISCOVERY STARTING ===')
+        print('[Popcorn] === DISCOVERY v4.1 STARTING ===')
         raw_signals = harvest_all_signals()
         discovery_cache['raw_signals'] = raw_signals
         discovery_cache['status'] = 'analyzing with GPT-4o'
 
-        # Step 2: Build the prompt with all signal data
         signal_text = json.dumps(raw_signals, indent=2, default=str)
+        if len(signal_text) > 60000:
+            signal_text = signal_text[:60000] + '\n...[truncated]'
 
-        # Truncate if too long (GPT-4o context limit)
-        if len(signal_text) > 50000:
-            signal_text = signal_text[:50000] + '\n... [truncated for length]'
-
-        full_prompt = THE_PROMPT + signal_text
-
-        # Step 3: Send to GPT-4o
-        print('[Popcorn] Sending to GPT-4o for analysis...')
-        analysis = ask_gpt_json(full_prompt, max_tokens=4000)
+        print('[Popcorn] Sending ' + str(len(signal_text)) + ' chars to GPT-4o...')
+        analysis = ask_gpt_json(DISCOVERY_PROMPT + signal_text, max_tokens=4096)
 
         if analysis is None:
             discovery_cache['error'] = 'GPT-4o returned no response'
             discovery_cache['status'] = 'error'
             discovery_cache['loading'] = False
-            print('[Popcorn] ERROR: GPT returned None')
             return
 
-        # Step 4: Enrich each prediction with live data
-        print('[Popcorn] Enriching predictions with source data...')
+        print('[Popcorn] GPT analysis received. Enriching predictions...')
         discovery_cache['status'] = 'enriching with live data'
 
         currents = analysis.get('cultural_currents', [])
-        enriched_predictions = []
+        enriched = []
 
         for current in currents[:8]:
-            print('[Popcorn] Enriching: ' + current.get('name', 'Unknown'))
+            name = current.get('name', 'Unknown')
+            print('[Popcorn] Enriching: ' + name)
 
-            # Generate search terms from the current
-            search_terms = generate_search_terms(current)
+            # Use GPT-provided search terms
+            search_terms = current.get('search_terms_to_track', [])
+            if not search_terms:
+                search_terms = generate_search_terms(current)
 
-            # Pull supporting data
-            supporting_data = {}
+            # Pull HEAVY data from each source
+            supporting = {}
 
-            # YouTube
+            # YouTube — 5 searches × 10 results = up to 50 videos
             try:
                 yt = []
-                for term in search_terms[:3]:
-                    yt.append(search_youtube(term, max_results=5))
+                for term in search_terms[:5]:
+                    result = search_youtube(term, max_results=10)
+                    yt.append(result)
                     t.sleep(0.5)
-                supporting_data['youtube'] = yt
-            except Exception:
-                supporting_data['youtube'] = []
+                supporting['youtube'] = yt
+                total_vids = sum(r.get('video_count', 0) for r in yt if not r.get('error'))
+                print('[Popcorn]   YouTube: ' + str(total_vids) + ' videos')
+            except Exception as e:
+                print('[Popcorn]   YouTube FAIL: ' + str(e))
+                supporting['youtube'] = []
 
-            # Spotify
+            # Spotify — 5 searches × 10 playlists = up to 50 playlists
             try:
                 sp = []
-                for term in search_terms[:3]:
-                    sp.append(search_spotify_playlists(term, limit=5))
+                for term in search_terms[:5]:
+                    result = search_spotify_playlists(term, limit=10)
+                    sp.append(result)
                     t.sleep(0.5)
-                supporting_data['spotify'] = sp
-            except Exception:
-                supporting_data['spotify'] = []
+                supporting['spotify'] = sp
+                total_pl = sum(r.get('playlist_count', 0) for r in sp if not r.get('error'))
+                print('[Popcorn]   Spotify: ' + str(total_pl) + ' playlists')
+            except Exception as e:
+                print('[Popcorn]   Spotify FAIL: ' + str(e))
+                supporting['spotify'] = []
 
-            # Wikipedia
+            # Wikipedia — up to 8 articles
             try:
-                wiki_terms = [term.replace(' ', '_') for term in search_terms[:3]]
-                supporting_data['wikipedia'] = get_wikipedia_batch(wiki_terms)
-            except Exception:
-                supporting_data['wikipedia'] = []
+                wiki_terms = []
+                for term in search_terms[:8]:
+                    wiki_terms.append(term.replace(' ', '_').title())
+                supporting['wikipedia'] = get_wikipedia_batch(wiki_terms)
+                valid = [w for w in supporting['wikipedia'] if not w.get('error')]
+                print('[Popcorn]   Wikipedia: ' + str(len(valid)) + ' articles')
+            except Exception as e:
+                print('[Popcorn]   Wikipedia FAIL: ' + str(e))
+                supporting['wikipedia'] = []
 
-            # News
+            # News — 5 searches × 10 articles = up to 50 articles
             try:
                 news = []
-                for term in search_terms[:2]:
-                    news.append(search_news(term, days_back=30, page_size=5))
+                for term in search_terms[:5]:
+                    result = search_news(term, days_back=30, page_size=10)
+                    news.append(result)
                     t.sleep(0.5)
-                supporting_data['news'] = news
-            except Exception:
-                supporting_data['news'] = []
+                supporting['news'] = news
+                total_arts = sum(r.get('total_results', 0) for r in news if not r.get('error'))
+                print('[Popcorn]   News: ' + str(total_arts) + ' articles')
+            except Exception as e:
+                print('[Popcorn]   News FAIL: ' + str(e))
+                supporting['news'] = []
 
-            # Score it
-            strength = calc_strength(supporting_data)
+            # AO3 — up to 6 tags
+            try:
+                ao3_tags = search_terms[:6]
+                supporting['ao3'] = get_ao3_batch(ao3_tags)
+                total_works = sum(r.get('work_count', 0) for r in supporting['ao3'] if not r.get('error'))
+                print('[Popcorn]   AO3: ' + str(total_works) + ' works')
+            except Exception as e:
+                print('[Popcorn]   AO3 FAIL: ' + str(e))
+                supporting['ao3'] = []
 
-            enriched_predictions.append({
-                'id': current.get('name', 'unknown').lower().replace(' ', '-').replace('/', '-')[:30],
-                'name': current.get('name', 'Unknown Current'),
+            # TMDB — 3 searches
+            try:
+                tmdb = []
+                for term in search_terms[:3]:
+                    tmdb.append(search_tmdb(term))
+                    t.sleep(0.3)
+                supporting['tmdb'] = tmdb
+                print('[Popcorn]   TMDB: OK')
+            except Exception as e:
+                print('[Popcorn]   TMDB FAIL: ' + str(e))
+                supporting['tmdb'] = []
+
+            # Books — 3 searches
+            try:
+                books = []
+                for term in search_terms[:3]:
+                    books.append(search_open_library(term))
+                    t.sleep(0.3)
+                supporting['books'] = books
+                print('[Popcorn]   Books: OK')
+            except Exception as e:
+                supporting['books'] = []
+
+            strength = calc_strength(supporting)
+
+            enriched.append({
+                'id': name.lower().replace(' ', '-').replace('/', '-').replace("'", '')[:40],
+                'name': name,
                 'rank': current.get('rank', 0),
                 'psychological_drive': current.get('psychological_drive', ''),
                 'confidence': current.get('confidence', 'LOW'),
@@ -196,21 +248,27 @@ def run_auto_discovery():
                 'supporting_sources': current.get('supporting_sources', []),
                 'source_count': current.get('source_count', 0),
                 'key_signals': current.get('key_signals', []),
-                'audience_size_estimate': current.get('audience_size_estimate', ''),
+                'target_demographic': current.get('target_demographic', ''),
+                'audience_size_millions': current.get('audience_size_millions', 0),
+                'format_recommendation': current.get('format_recommendation', ''),
+                'tone_and_style': current.get('tone_and_style', ''),
                 'entertainment_prediction': current.get('entertainment_prediction', ''),
                 'demand_gap': current.get('demand_gap', ''),
                 'content_opportunity': current.get('content_opportunity', ''),
+                'comparable_successes': current.get('comparable_successes', []),
                 'historical_parallel': current.get('historical_parallel', ''),
-                'timeframe': current.get('timeframe', ''),
+                'risk_factors': current.get('risk_factors', []),
                 'what_to_watch': current.get('what_to_watch', ''),
-                'signal_strength': strength,
-                'supporting_data': supporting_data,
+                'timeframe': current.get('timeframe', ''),
                 'search_terms_used': search_terms,
+                'signal_strength': strength,
+                'supporting_data': supporting,
                 'generated_at': datetime.utcnow().isoformat(),
             })
 
-        # Step 5: Store everything
-        discovery_cache['predictions'] = enriched_predictions
+            print('[Popcorn] Done: ' + name + ' (score: ' + str(strength['overall_score']) + ')')
+
+        discovery_cache['predictions'] = enriched
         discovery_cache['analysis'] = {
             'meta_analysis': analysis.get('meta_analysis', ''),
             'biggest_gap': analysis.get('biggest_gap', ''),
@@ -222,49 +280,34 @@ def run_auto_discovery():
         discovery_cache['last_run'] = datetime.utcnow().isoformat()
         discovery_cache['loading'] = False
 
-        print('[Popcorn] === AUTO-DISCOVERY COMPLETE ===')
-        print('[Popcorn] Generated ' + str(len(enriched_predictions)) + ' predictions')
+        print('[Popcorn] === DISCOVERY COMPLETE: ' + str(len(enriched)) + ' predictions ===')
 
     except Exception as e:
         print('[Popcorn] CRITICAL ERROR: ' + str(e))
+        import traceback
+        traceback.print_exc()
         discovery_cache['error'] = str(e)
         discovery_cache['status'] = 'error'
         discovery_cache['loading'] = False
 
 
 def generate_search_terms(current):
-    name = current.get('name', '')
-    drive = current.get('psychological_drive', '')
-    gap = current.get('demand_gap', '')
-    opportunity = current.get('content_opportunity', '')
-
     terms = set()
-
-    for text in [name, drive, gap, opportunity]:
-        words = text.lower().replace(',', ' ').replace('.', ' ').replace('/', ' ').split()
-        # Extract 2-3 word phrases
+    for text in [current.get('name', ''), current.get('psychological_drive', ''), current.get('demand_gap', ''), current.get('content_opportunity', '')]:
+        words = text.lower().replace(',', ' ').replace('.', ' ').split()
         for i in range(len(words)):
             if i < len(words) - 1:
-                phrase = words[i] + ' ' + words[i + 1]
-                if len(phrase) > 5 and len(phrase) < 40:
+                phrase = words[i] + ' ' + words[i+1]
+                if 5 < len(phrase) < 40:
                     terms.add(phrase)
             if i < len(words) - 2:
-                phrase = words[i] + ' ' + words[i + 1] + ' ' + words[i + 2]
-                if len(phrase) > 8 and len(phrase) < 40:
+                phrase = words[i] + ' ' + words[i+1] + ' ' + words[i+2]
+                if 8 < len(phrase) < 40:
                     terms.add(phrase)
-
-    # Add the name itself
-    terms.add(name.lower())
-
-    # Filter out garbage
-    stop_words = {'the', 'and', 'for', 'that', 'this', 'with', 'from', 'are', 'but', 'not', 'has', 'have', 'will', 'about'}
-    filtered = []
-    for term in terms:
-        words = term.split()
-        if not all(w in stop_words for w in words):
-            filtered.append(term)
-
-    return filtered[:10]
+    terms.add(current.get('name', 'unknown').lower())
+    stop = {'the','and','for','that','this','with','from','are','but','not','has','will','about','their','they','been','have','into','more','than','what','when','who','how'}
+    filtered = [term for term in terms if not all(w in stop for w in term.split())]
+    return filtered[:12]
 
 
 def calc_strength(sources):
@@ -272,41 +315,74 @@ def calc_strength(sources):
     total = 0
     count = 0
 
+    # YouTube — scale: 50 videos = 100
     if 'youtube' in sources:
         vids = sum(r.get('video_count', 0) for r in sources['youtube'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, vids * 4)
-        scores['youtube'] = {'score': round(sc), 'detail': str(vids) + ' videos'}
+        sc = min(100, vids * 2)
+        scores['youtube'] = {'score': round(sc), 'detail': str(vids) + ' videos across ' + str(len(sources['youtube'])) + ' searches', 'raw_count': vids}
         total += sc
         count += 1
 
+    # Spotify — scale: 50 playlists = 100
     if 'spotify' in sources:
         pls = sum(r.get('playlist_count', 0) for r in sources['spotify'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, pls * 6)
-        scores['spotify'] = {'score': round(sc), 'detail': str(pls) + ' playlists'}
+        total_tracks = sum(sum(p.get('tracks', 0) for p in r.get('playlists', [])) for r in sources['spotify'] if isinstance(r, dict) and not r.get('error'))
+        sc = min(100, pls * 2)
+        scores['spotify'] = {'score': round(sc), 'detail': str(pls) + ' playlists, ' + str(total_tracks) + ' total tracks', 'raw_count': pls}
         total += sc
         count += 1
 
+    # Wikipedia — combine volume AND trend
     if 'wikipedia' in sources:
-        rising = sum(1 for w in sources['wikipedia'] if isinstance(w, dict) and w.get('trend') == 'rising')
-        tot = len([w for w in sources['wikipedia'] if isinstance(w, dict) and not w.get('error')])
-        total_views = sum(w.get('daily_average', 0) for w in sources['wikipedia'] if isinstance(w, dict) and not w.get('error'))
-        sc = min(100, max((rising / max(tot, 1)) * 60, min(total_views / 50, 40)))
-        scores['wikipedia'] = {'score': round(sc), 'detail': str(rising) + '/' + str(tot) + ' rising, ' + str(total_views) + ' daily views'}
+        valid = [w for w in sources['wikipedia'] if isinstance(w, dict) and not w.get('error')]
+        rising = sum(1 for w in valid if w.get('trend') == 'rising')
+        total_daily = sum(w.get('daily_average', 0) for w in valid)
+        vol_score = min(50, total_daily / 20)
+        trend_score = min(50, (rising / max(len(valid), 1)) * 50) if valid else 0
+        sc = vol_score + trend_score
+        scores['wikipedia'] = {'score': round(sc), 'detail': str(len(valid)) + ' articles, ' + str(rising) + ' rising, ' + str(total_daily) + ' daily views', 'raw_count': total_daily}
         total += sc
         count += 1
 
+    # News — scale: 100 articles = 100
     if 'news' in sources:
         arts = sum(r.get('total_results', 0) for r in sources['news'] if isinstance(r, dict) and not r.get('error'))
         sc = min(100, arts)
-        scores['news'] = {'score': round(sc), 'detail': str(arts) + ' articles'}
+        scores['news'] = {'score': round(sc), 'detail': str(arts) + ' articles in last 30 days', 'raw_count': arts}
+        total += sc
+        count += 1
+
+    # AO3 — scale: 10K works = 100
+    if 'ao3' in sources:
+        works = sum(r.get('work_count', 0) for r in sources['ao3'] if isinstance(r, dict) and not r.get('error'))
+        sc = min(100, works / 100)
+        scores['ao3'] = {'score': round(sc), 'detail': str(works) + ' fan works', 'raw_count': works}
+        total += sc
+        count += 1
+
+    # TMDB — INVERSE: less supply = higher score
+    if 'tmdb' in sources:
+        res = sum(r.get('count', 0) for r in sources['tmdb'] if isinstance(r, dict) and not r.get('error'))
+        sc = min(100, max(0, 100 - (res * 5)))
+        scores['tmdb'] = {'score': round(sc), 'detail': str(res) + ' existing titles (fewer = bigger gap)', 'raw_count': res}
+        total += sc
+        count += 1
+
+    # Books
+    if 'books' in sources:
+        bks = sum(r.get('total_found', 0) for r in sources['books'] if isinstance(r, dict) and not r.get('error'))
+        sc = min(100, bks / 10)
+        scores['books'] = {'score': round(sc), 'detail': str(bks) + ' related books', 'raw_count': bks}
         total += sc
         count += 1
 
     overall = round(total / max(count, 1))
+
     return {
         'overall_score': overall,
         'confidence': 'HIGH' if overall >= 65 else ('MODERATE' if overall >= 40 else 'LOW'),
         'sources_used': count,
+        'total_data_points': sum(s.get('raw_count', 0) for s in scores.values()),
         'source_scores': scores,
     }
 
@@ -323,20 +399,20 @@ def index():
 def health():
     return jsonify({
         'status': 'ok',
-        'version': '4.0 — Auto-Discovery',
+        'version': '4.1 — Precision Engine',
         'discovery_status': discovery_cache['status'],
         'predictions_generated': len(discovery_cache['predictions']),
         'last_run': discovery_cache['last_run'],
         'error': discovery_cache['error'],
         'data_sources': {
+            'openai': bool(os.environ.get('OPENAI_API_KEY')),
             'youtube': bool(os.environ.get('YOUTUBE_API_KEY')),
             'spotify': bool(os.environ.get('SPOTIFY_CLIENT_ID')),
             'tmdb': bool(os.environ.get('TMDB_API_KEY')),
             'news': bool(os.environ.get('NEWS_API_KEY')),
-            'openai': bool(os.environ.get('OPENAI_API_KEY')),
-            'google_trends': True,
             'wikipedia': True,
             'ao3': True,
+            'open_library': True,
         },
     })
 
@@ -344,10 +420,10 @@ def health():
 @app.route('/api/discover', methods=['POST'])
 def trigger_discovery():
     if discovery_cache['loading']:
-        return jsonify({'message': 'Already running. Check /api/health for status.'}), 429
+        return jsonify({'message': 'Already running.'}), 429
     thread = threading.Thread(target=run_auto_discovery, daemon=True)
     thread.start()
-    return jsonify({'message': 'Auto-discovery started. This takes 5-10 minutes. Check /api/health for status.'})
+    return jsonify({'message': 'Discovery started. Takes 8-15 minutes.'})
 
 
 @app.route('/api/predictions')
@@ -362,37 +438,40 @@ def get_predictions():
             'confidence': p['confidence'],
             'convergence_score': p['convergence_score'],
             'source_count': p['source_count'],
+            'target_demographic': p.get('target_demographic', ''),
+            'audience_size_millions': p.get('audience_size_millions', 0),
+            'format_recommendation': p.get('format_recommendation', ''),
+            'tone_and_style': p.get('tone_and_style', ''),
             'entertainment_prediction': p['entertainment_prediction'],
             'demand_gap': p['demand_gap'],
             'timeframe': p['timeframe'],
             'signal_score': p['signal_strength']['overall_score'],
+            'total_data_points': p['signal_strength'].get('total_data_points', 0),
             'generated_at': p['generated_at'],
         })
-
     return jsonify({
         'count': len(preds),
         'predictions': preds,
         'analysis': discovery_cache.get('analysis'),
         'status': discovery_cache['status'],
         'last_run': discovery_cache['last_run'],
-        'generated_at': datetime.utcnow().isoformat(),
     })
 
 
-@app.route('/api/predictions/<prediction_id>')
-def get_prediction_detail(prediction_id):
+@app.route('/api/predictions/<pid>')
+def get_prediction(pid):
     for p in discovery_cache['predictions']:
-        if p['id'] == prediction_id:
+        if p['id'] == pid:
             return jsonify(p)
-    return jsonify({'error': 'Not found. Run /api/discover first.'}), 404
+    return jsonify({'error': 'Not found'}), 404
 
 
 @app.route('/api/raw-signals')
-def get_raw_signals():
+def raw_signals():
     return jsonify(discovery_cache.get('raw_signals', {}))
 
 
-# Scanner routes (keep these for manual exploration)
+# Scanner routes
 @app.route('/api/scan/youtube')
 def scan_yt():
     q = request.args.get('q', '')
@@ -411,11 +490,11 @@ def scan_sp():
 
 @app.route('/api/scan/wikipedia')
 def scan_wiki():
-    articles = request.args.get('articles', '')
-    if not articles:
+    a = request.args.get('articles', '')
+    if not a:
         return jsonify({'error': 'Provide ?articles=A1,A2'}), 400
-    arts = [a.strip() for a in articles.split(',') if a.strip()][:5]
-    return jsonify({'results': get_wikipedia_batch(arts), 'collected_at': datetime.utcnow().isoformat()})
+    arts = [x.strip() for x in a.split(',') if x.strip()][:5]
+    return jsonify({'results': get_wikipedia_batch(arts)})
 
 
 @app.route('/api/scan/news')
@@ -437,7 +516,7 @@ def scan_ao3():
     if not tags:
         return jsonify({'error': 'Provide ?tags=T1,T2'}), 400
     tl = [x.strip() for x in tags.split(',') if x.strip()][:5]
-    return jsonify({'results': get_ao3_batch(tl), 'collected_at': datetime.utcnow().isoformat()})
+    return jsonify({'results': get_ao3_batch(tl)})
 
 
 @app.route('/api/scan/tmdb/trending')
@@ -464,10 +543,9 @@ def scan_tr():
     if not terms:
         return jsonify({'error': 'Provide ?terms=t1,t2'}), 400
     tl = [x.strip() for x in terms.split(',') if x.strip()][:3]
-    return jsonify({'results': get_google_trends_batch(tl), 'collected_at': datetime.utcnow().isoformat()})
+    return jsonify({'results': get_google_trends_batch(tl)})
 
 
-# Retroactive proof
 @app.route('/api/analyses')
 def get_analyses():
     from retroactive import get_all_analyses
@@ -484,7 +562,7 @@ def get_analysis(cid):
 
 
 # ============================================================
-# AUTO-START on first visit
+# AUTO-START
 # ============================================================
 _started = False
 
