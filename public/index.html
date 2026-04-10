@@ -9,99 +9,73 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh}
 .hd{background:#0f0f0f;border-bottom:1px solid #1e1e1e;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .logo{font-size:28px;font-weight:800;color:#fff}.logo span{color:#f59e0b}
-.logo-sub{font-size:12px;color:#606060;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.logo-sub{font-size:11px;color:#505050;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
 .mx{max-width:1200px;margin:0 auto;padding:32px}
-.tabs{display:flex;gap:4px;margin-bottom:32px;border-bottom:1px solid #1e1e1e;padding-bottom:12px}
-.tab{padding:10px 24px;border-radius:8px 8px 0 0;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#606060;background:transparent;transition:.3s}
-.tab:hover{color:#a0a0a0}.tab.on{color:#f59e0b;background:#1a1400;border-bottom:2px solid #f59e0b}
+.tabs{display:flex;gap:4px;margin-bottom:28px;border-bottom:1px solid #1e1e1e;padding-bottom:12px}
+.tab{padding:10px 24px;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#505050;background:transparent;border-radius:8px 8px 0 0;transition:.3s}
+.tab:hover{color:#a0a0a0}.tab.on{color:#f59e0b;background:#1a1400}
 .pane{display:none}.pane.on{display:block}
-.hero{text-align:center;padding:40px 20px 30px}
-.hero h1{font-size:32px;font-weight:800;color:#fff;margin-bottom:12px;line-height:1.3}
+.status-bar{background:#141414;border:1px solid #1e1e1e;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.status-text{font-size:13px;color:#a0a0a0}
+.status-text strong{color:#fff}
+.btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:.3s}
+.btn-gold{background:#f59e0b;color:#0a0a0a}.btn-gold:hover{opacity:.8}
+.btn-ghost{background:transparent;border:1px solid #2a2a2a;color:#a0a0a0}.btn-ghost:hover{border-color:#f59e0b;color:#f59e0b}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.hero{text-align:center;padding:40px 20px 20px}
+.hero h1{font-size:32px;font-weight:800;color:#fff;margin-bottom:10px;line-height:1.3}
 .hero h1 span{color:#f59e0b}
-.hero p{font-size:16px;color:#707070;max-width:700px;margin:0 auto;line-height:1.7}
-.badge-m{display:inline-block;margin-top:14px;padding:6px 16px;background:#1a1400;border:1px solid #f59e0b;border-radius:20px;font-size:12px;color:#f59e0b;font-weight:600}
-.section-label{margin:32px 0 16px;font-size:13px;color:#f59e0b;text-transform:uppercase;letter-spacing:3px;font-weight:700}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.card{background:#141414;border:1px solid #1e1e1e;border-radius:12px;padding:24px;margin-bottom:16px;transition:all .3s}
-.card:hover{border-color:#2a2a2a}
-.card-click{cursor:pointer}.card-click:hover{border-color:#f59e0b;transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,158,11,.08)}
-.card-t{font-size:13px;font-weight:600;color:#606060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
-.score-c{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px;color:#0a0a0a}
-.s-hi{background:#f59e0b}.s-md{background:#22d3ee}.s-lo{background:#f87171}
-.card h3{font-size:18px;font-weight:700;color:#fff;margin-bottom:6px}
-.card .verdict{font-size:12px;color:#a0a0a0;line-height:1.6}
-.card .outcome{font-size:11px;color:#505050;margin-top:6px}
-.card .hint{font-size:11px;color:#f59e0b;margin-top:12px}
-.card .sig-count{font-size:11px;color:#505050;margin-top:4px}
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.kpi{background:#141414;border:1px solid #1e1e1e;border-radius:10px;padding:18px;text-align:center}
-.kpi-l{font-size:10px;color:#505050;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.kpi-v{font-size:26px;font-weight:800}
-.kpi-s{font-size:10px;color:#404040;margin-top:3px}
-.amber{color:#f59e0b}.green{color:#4ade80}.red{color:#f87171}.cyan{color:#22d3ee}.wh{color:#fff}
-.thesis-box{background:#0f1a0f;border:1px solid #166534;border-radius:10px;padding:18px;margin-bottom:20px;font-size:14px;color:#a0a0a0;line-height:1.8}
-.thesis-box strong{color:#4ade80}
-.alert-box{background:#1a1400;border:1px solid #b45309;border-radius:10px;padding:18px;margin-bottom:20px}
-.alert-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.alert-badge{background:#f59e0b;color:#0a0a0a;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
-.alert-date{font-size:12px;color:#b45309}
-.alert-txt{font-size:13px;color:#d4a050;line-height:1.8}
-.cur-section{margin-bottom:20px}
-.cur-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#0f0f0f;border:1px solid #1e1e1e;border-radius:10px;cursor:pointer}
-.cur-hd:hover{background:#1a1a1a}
-.cur-nm{font-size:15px;font-weight:700;color:#f59e0b}
-.cur-cat{font-size:10px;color:#505050;text-transform:uppercase;letter-spacing:1px}
-.str-badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
-.str-s{background:#052e16;color:#4ade80;border:1px solid #166534}
-.str-m{background:#2a1f00;color:#f59e0b;border:1px solid #713f12}
-.str-w{background:#2a0000;color:#f87171;border:1px solid #7f1d1d}
-.cur-body{background:#0a0a0a;border:1px solid #1e1e1e;border-top:none;border-radius:0 0 10px 10px;padding:18px}
-.cur-why{font-size:12px;color:#707070;line-height:1.7;margin-bottom:14px;padding:10px 14px;background:#0f0f0f;border-radius:8px;border-left:3px solid #f59e0b}
-.sig-card{background:#141414;border:1px solid #1a1a1a;border-radius:8px;padding:14px;margin-bottom:10px}
-.sig-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.sig-term{font-size:13px;font-weight:600;color:#e0e0e0}
-.sig-src{font-size:10px;color:#505050;text-transform:uppercase}
-.sig-stats{display:flex;gap:14px;margin-bottom:8px;font-size:11px}
-.stat{display:flex;flex-direction:column}.stat-l{color:#505050;font-size:9px;text-transform:uppercase}.stat-v{font-weight:700;font-size:13px}
-.sig-chart{display:flex;align-items:flex-end;gap:2px;height:45px;margin:10px 0}
-.sig-bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;position:relative;cursor:pointer}
-.sig-bar:hover{opacity:.7}
-.sig-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:3px 7px;font-size:9px;white-space:nowrap;color:#e0e0e0;margin-bottom:3px;z-index:5}
-.sig-bar:hover .sig-tip{display:block}
-.sig-dates{display:flex;justify-content:space-between;font-size:9px;color:#404040;margin-top:2px}
-.sig-insight{font-size:11px;color:#606060;line-height:1.6;margin-top:8px;padding:8px 10px;background:#0a0a0a;border-radius:6px;border-left:2px solid #333}
-.conclusion{background:#0f1a0f;border:1px solid #166534;border-radius:12px;padding:24px;margin:32px 0;text-align:center}
-.conclusion h3{color:#4ade80;font-size:18px;margin-bottom:8px}
-.conclusion p{color:#a0a0a0;font-size:14px;line-height:1.7;max-width:650px;margin:0 auto}
-.conclusion .hl{color:#f59e0b;font-weight:700}
-.method{background:#141414;border:1px solid #1e1e1e;border-radius:12px;padding:20px;margin-top:32px}
-.method h3{font-size:13px;color:#505050;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.method p{font-size:12px;color:#404040;line-height:1.7;margin-bottom:8px}
-.method strong{color:#606060}
+.hero p{font-size:16px;color:#606060;max-width:700px;margin:0 auto;line-height:1.7}
+.meta-box{background:#141414;border:1px solid #1e1e1e;border-radius:12px;padding:20px;margin-bottom:24px}
+.meta-title{font-size:14px;font-weight:700;color:#f59e0b;margin-bottom:8px}
+.meta-text{font-size:13px;color:#a0a0a0;line-height:1.8}
+.collision-box{background:#1a0a0a;border:1px solid #7f1d1d;border-radius:12px;padding:20px;margin-bottom:24px}
+.collision-title{font-size:14px;font-weight:700;color:#f87171;margin-bottom:8px}
+.gap-box{background:#0a1a0f;border:1px solid #166534;border-radius:12px;padding:20px;margin-bottom:24px}
+.gap-title{font-size:14px;font-weight:700;color:#4ade80;margin-bottom:8px}
+.pred-card{background:#141414;border:1px solid #1e1e1e;border-radius:12px;padding:24px;margin-bottom:16px;cursor:pointer;transition:all .3s}
+.pred-card:hover{border-color:#f59e0b;transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,158,11,.06)}
+.pred-rank{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#f59e0b;color:#0a0a0a;font-weight:800;font-size:13px;margin-right:10px}
+.pred-name{font-size:20px;font-weight:700;color:#fff}
+.pred-drive{font-size:12px;color:#f59e0b;margin-top:4px}
+.pred-prediction{font-size:13px;color:#a0a0a0;line-height:1.7;margin:12px 0;padding:12px 16px;background:#1a1400;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0}
+.pred-meta{display:flex;gap:16px;font-size:11px;color:#505050;flex-wrap:wrap;margin-top:8px}
+.pred-meta span{display:flex;align-items:center;gap:4px}
+.conf-badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
+.conf-high{background:#052e16;color:#4ade80;border:1px solid #166534}
+.conf-mod{background:#2a1f00;color:#f59e0b;border:1px solid #713f12}
+.conf-low{background:#2a0000;color:#f87171;border:1px solid #7f1d1d}
+.score-circle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-weight:800;font-size:16px;color:#0a0a0a;background:#f59e0b}
+.detail-view{display:none}.detail-view.on{display:block}
 .back-btn{background:none;border:1px solid #2a2a2a;color:#a0a0a0;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:13px;margin-bottom:20px;transition:.3s}
 .back-btn:hover{border-color:#f59e0b;color:#f59e0b}
-.detail-section{display:none}.detail-section.active{display:block}
-.pred-card{background:#141414;border:1px solid #1e1e1e;border-radius:12px;padding:24px;margin-bottom:16px;cursor:pointer;transition:all .3s}
-.pred-card:hover{border-color:#f59e0b;transform:translateY(-2px)}
-.pred-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.pred-nm{font-size:18px;font-weight:700;color:#fff}
-.pred-cat{font-size:10px;color:#f59e0b;text-transform:uppercase;letter-spacing:1px;background:#1a1400;padding:3px 10px;border-radius:4px}
-.pred-thesis{font-size:13px;color:#808080;line-height:1.7;margin-bottom:10px}
-.pred-prediction{font-size:13px;color:#f59e0b;line-height:1.6;padding:10px 14px;background:#1a1400;border-radius:8px;border-left:3px solid #f59e0b;margin-bottom:10px}
-.pred-meta{display:flex;gap:16px;font-size:11px;color:#505050}
-.pred-detail{display:none;margin-top:16px;padding-top:16px;border-top:1px solid #1e1e1e}
-.pred-loading{text-align:center;padding:20px;color:#505050;font-size:13px}
-.source-score{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0f0f0f;border-radius:8px;margin-bottom:8px}
-.source-name{font-size:12px;color:#a0a0a0;width:120px}
+.card{background:#141414;border:1px solid #1e1e1e;border-radius:12px;padding:20px;margin-bottom:16px}
+.card-t{font-size:12px;font-weight:600;color:#505050;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.signal-item{padding:8px 12px;background:#0f0f0f;border-radius:6px;margin-bottom:6px;font-size:12px;color:#a0a0a0;line-height:1.6;border-left:3px solid #f59e0b}
+.source-bar-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#0f0f0f;border-radius:6px;margin-bottom:6px}
+.source-name{font-size:12px;color:#808080;width:100px;flex-shrink:0}
 .source-bar-bg{flex:1;height:8px;background:#1e1e1e;border-radius:4px;overflow:hidden}
-.source-bar{height:100%;border-radius:4px;transition:width 1s}
-.source-val{font-size:12px;font-weight:700;width:40px;text-align:right}
-.live-badge{display:inline-block;padding:3px 10px;background:#052e16;color:#4ade80;border:1px solid #166534;border-radius:4px;font-size:10px;font-weight:700;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.footer{text-align:center;padding:30px;font-size:11px;color:#303030;border-top:1px solid #1a1a1a;margin-top:50px}
+.source-bar{height:100%;border-radius:4px}
+.source-val{font-size:12px;font-weight:700;width:35px;text-align:right}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.kpi{background:#141414;border:1px solid #1e1e1e;border-radius:8px;padding:14px;text-align:center}
+.kpi-l{font-size:10px;color:#505050;text-transform:uppercase;margin-bottom:4px}
+.kpi-v{font-size:22px;font-weight:800}
+.amber{color:#f59e0b}.green{color:#4ade80}.red{color:#f87171}.cyan{color:#22d3ee}.wh{color:#fff}
+.yt-item{padding:6px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:11px}
+.yt-title{color:#e0e0e0}.yt-ch{color:#505050;margin-left:6px}
+.wiki-row{display:flex;justify-content:space-between;padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:12px}
+.news-item{padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:11px}
+.news-title{color:#22d3ee}.news-src{color:#505050;margin-left:6px}
 .loading{text-align:center;padding:60px;color:#505050;font-size:15px}
-@media(max-width:900px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}.mx{padding:16px}.tabs{flex-wrap:wrap}}
+.loading .spin{display:inline-block;width:24px;height:24px;border:3px solid #1e1e1e;border-top-color:#f59e0b;border-radius:50%;animation:spin 1s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:30px;font-size:11px;color:#252525;border-top:1px solid #1a1a1a;margin-top:40px}
+.scanner-input{display:flex;gap:8px;margin-bottom:16px}
+.scanner-input input{flex:1;padding:12px 16px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:8px;color:#e0e0e0;font-size:14px;outline:none}
+.scanner-input input:focus{border-color:#f59e0b}
+@media(max-width:768px){.mx{padding:16px}.kpi-row{grid-template-columns:1fr 1fr}.tabs{flex-wrap:wrap}.pred-name{font-size:16px}}
 </style>
 </head>
 <body>
@@ -111,600 +85,500 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0a;color:#e0e0e
 <div class="logo">🍿 Popcorn <span>AI</span></div>
 <div class="logo-sub">Audience Demand Intelligence</div>
 </div>
-<div style="display:flex;align-items:center;gap:12px">
-<span class="live-badge">● LIVE DATA</span>
-<span style="font-size:12px;color:#404040">v3.0</span>
+<div style="display:flex;align-items:center;gap:10px">
+<span id="liveIndicator" class="pulse" style="font-size:11px;color:#4ade80">● AUTO-DISCOVERY</span>
+<span style="font-size:11px;color:#353535">v4.0</span>
 </div>
 </div>
 
 <div class="mx">
 
 <div class="tabs">
-<button class="tab on" id="tab-predictions" onclick="switchTab('predictions')">🔮 Live Predictions</button>
+<button class="tab on" id="tab-discover" onclick="switchTab('discover')">🔮 AI Predictions</button>
 <button class="tab" id="tab-proof" onclick="switchTab('proof')">📊 Retroactive Proof</button>
 <button class="tab" id="tab-scanner" onclick="switchTab('scanner')">🔍 Signal Scanner</button>
 </div>
 
-<!-- PREDICTIONS PANE -->
-<div class="pane on" id="pane-predictions">
+<!-- AI PREDICTIONS -->
+<div class="pane on" id="pane-discover">
+
+<div class="status-bar" id="statusBar">
+<div class="status-text" id="statusText"><span class="spin"></span> Initializing auto-discovery engine...</div>
+<button class="btn btn-gold" onclick="triggerDiscovery()">↻ Run Discovery</button>
+</div>
+
+<div id="discoveryContent">
 <div class="hero">
-<h1>What audiences crave <span>right now</span></h1>
-<p>Five forward predictions backed by real-time data from Google Trends, YouTube, Spotify, Wikipedia, NewsAPI, TMDB, and AO3. Every signal is verifiable. Every prediction is timestamped.</p>
-<div class="badge-m">Published <span id="pubDate"></span> · Tracked across 10+ data sources</div>
+<h1>Popcorn is <span>thinking</span>...</h1>
+<p>The AI is harvesting signals from YouTube, Spotify, Wikipedia, News, TMDB, and AO3, then analyzing them with GPT-4o to discover what audiences crave right now.</p>
+<p style="margin-top:12px;font-size:13px;color:#505050">First run takes 5-10 minutes. Refresh this page after a few minutes.</p>
+</div>
 </div>
 
-<div id="predictionsContainer"><div class="loading">Loading predictions...</div></div>
+<div id="predictionsList" style="display:none"></div>
+<div class="detail-view" id="detailView"></div>
 </div>
 
-<!-- PROOF PANE -->
+<!-- RETROACTIVE PROOF -->
 <div class="pane" id="pane-proof">
 <div class="hero">
 <h1>Entertainment hits don't create demand.<br>They <span>capture</span> demand that already exists.</h1>
-<p>Content-blind cultural signals — ZERO references to the movies or shows themselves.</p>
-<div class="badge-m">100% Content-Blind · Pure Cultural Demand Signals</div>
+<p>Content-blind cultural signals — zero references to the movies or shows themselves.</p>
+</div>
+<div id="proofContent"><div class="loading"><span class="spin"></span> Loading...</div></div>
 </div>
 
-<div class="section-label">Retroactive Proof</div>
-<div class="grid3" id="proofSummary"><div class="loading">Loading...</div></div>
-
-<div id="conclusionArea" style="display:none">
-<div class="conclusion">
-<h3>✓ All Three Were Predictable</h3>
-<p>Without knowing these existed, Popcorn detected the <span class="hl">psychological cravings</span> they satisfied — months before release.</p>
-</div>
-</div>
-
-<!-- Detail views for retroactive -->
-<div class="detail-section" id="barbieDetail"></div>
-<div class="detail-section" id="squidDetail"></div>
-<div class="detail-section" id="bearDetail"></div>
-</div>
-
-<!-- SCANNER PANE -->
+<!-- SCANNER -->
 <div class="pane" id="pane-scanner">
-<div class="hero">
+<div class="hero" style="padding-bottom:20px">
 <h1>Signal <span>Scanner</span></h1>
-<p>Query any cultural signal across all data sources in real-time.</p>
+<p>Query any cultural signal across all data sources.</p>
 </div>
-
 <div class="card">
-<div class="card-t">Search Cultural Signals</div>
-<div style="display:flex;gap:8px;margin-bottom:16px">
-<input type="text" id="scanInput" placeholder="Enter a cultural signal (e.g., 'analog lifestyle', 'male vulnerability')" style="flex:1;padding:12px 16px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:8px;color:#e0e0e0;font-size:14px;outline:none">
-<button onclick="runScan()" style="padding:12px 24px;background:#f59e0b;color:#0a0a0a;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">Scan</button>
+<div class="scanner-input">
+<input type="text" id="scanInput" placeholder="Search any cultural signal (e.g. loneliness, vinyl records, male vulnerability)">
+<button class="btn btn-gold" onclick="runScan()">Scan</button>
 </div>
-<div style="font-size:11px;color:#505050">Searches: Google Trends, YouTube, Spotify, Wikipedia, News, TMDB, Books</div>
+<div style="font-size:11px;color:#353535">Searches: YouTube, Spotify, Wikipedia, News, TMDB, Books</div>
 </div>
-
 <div id="scanResults"></div>
 </div>
 
 </div>
 
-<div class="footer">
-Popcorn AI — Audience Demand Intelligence Platform · Real-time data from 10+ sources
-</div>
+<div class="footer">Popcorn AI — Auto-Discovery Audience Intelligence · Powered by GPT-4o + 8 real-time data sources</div>
 
 <script>
-var analysesData = null;
-var predictionsData = null;
+// ============================================================
+// STATE
+// ============================================================
+var pollInterval = null;
 
 // ============================================================
-// TAB SWITCHING
+// TABS
 // ============================================================
 function switchTab(name) {
-    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('on'); });
-    document.querySelectorAll('.pane').forEach(function(p) { p.classList.remove('on'); });
-    document.getElementById('tab-' + name).classList.add('on');
-    document.getElementById('pane-' + name).classList.add('on');
-    
-    // Hide any open detail views
-    document.querySelectorAll('.detail-section').forEach(function(d) { d.classList.remove('active'); });
-    document.getElementById('proofSummary').style.display = '';
-    if (document.getElementById('conclusionArea')) document.getElementById('conclusionArea').style.display = '';
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
+    document.querySelectorAll('.pane').forEach(function(p){p.classList.remove('on')});
+    document.getElementById('tab-'+name).classList.add('on');
+    document.getElementById('pane-'+name).classList.add('on');
+    hideDetail();
+    if (name === 'proof') loadProof();
 }
 
 // ============================================================
-// LOAD DATA
+// AUTO-DISCOVERY
 // ============================================================
-async function loadAll() {
-    loadPredictions();
-    loadProof();
+async function checkStatus() {
+    try {
+        var resp = await fetch('/api/health');
+        var data = await resp.json();
+        var status = data.discovery_status;
+        var count = data.predictions_generated;
+
+        var statusEl = document.getElementById('statusText');
+        var indicator = document.getElementById('liveIndicator');
+
+        if (status === 'loaded' && count > 0) {
+            statusEl.innerHTML = '<strong style="color:#4ade80">✓ Discovery complete</strong> — ' + count + ' cultural currents identified · Last run: ' + (data.last_run || 'just now').split('T')[0];
+            indicator.style.color = '#4ade80';
+            indicator.textContent = '● LIVE';
+            indicator.classList.remove('pulse');
+            loadPredictions();
+            if (pollInterval) clearInterval(pollInterval);
+        } else if (status === 'error') {
+            statusEl.innerHTML = '<strong style="color:#f87171">✗ Error:</strong> ' + (data.error || 'Unknown error') + ' — Click Run Discovery to retry.';
+            indicator.style.color = '#f87171';
+            indicator.textContent = '● ERROR';
+            indicator.classList.remove('pulse');
+            if (pollInterval) clearInterval(pollInterval);
+        } else {
+            statusEl.innerHTML = '<span class="spin"></span> ' + status + '...';
+            indicator.style.color = '#f59e0b';
+            indicator.textContent = '● WORKING';
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+async function triggerDiscovery() {
+    try {
+        await fetch('/api/discover', {method:'POST'});
+        document.getElementById('statusText').innerHTML = '<span class="spin"></span> Discovery started — harvesting signals from all sources...';
+        document.getElementById('liveIndicator').style.color = '#f59e0b';
+        document.getElementById('liveIndicator').textContent = '● WORKING';
+        document.getElementById('liveIndicator').classList.add('pulse');
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(checkStatus, 15000);
+    } catch(e) {
+        alert('Failed to start discovery');
+    }
 }
 
 async function loadPredictions() {
     try {
         var resp = await fetch('/api/predictions');
-        if (!resp.ok) throw new Error('API error');
-        predictionsData = await resp.json();
-        renderPredictions();
+        var data = await resp.json();
+
+        if (!data.predictions || data.predictions.length === 0) {
+            return;
+        }
+
+        var html = '';
+
+        // Meta analysis
+        if (data.analysis) {
+            if (data.analysis.meta_analysis) {
+                html += '<div class="meta-box"><div class="meta-title">🧠 Cultural Moment Analysis</div><div class="meta-text">' + data.analysis.meta_analysis + '</div></div>';
+            }
+            if (data.analysis.collision_alert) {
+                html += '<div class="collision-box"><div class="collision-title">⚠️ Collision Alert</div><div class="meta-text" style="color:#fca5a5">' + data.analysis.collision_alert + '</div></div>';
+            }
+            if (data.analysis.biggest_gap) {
+                html += '<div class="gap-box"><div class="gap-title">🎯 Biggest Unserved Demand</div><div class="meta-text" style="color:#86efac">' + data.analysis.biggest_gap + '</div></div>';
+            }
+        }
+
+        // Prediction cards
+        var preds = data.predictions;
+        for (var i = 0; i < preds.length; i++) {
+            var p = preds[i];
+            var confClass = p.confidence === 'HIGH' ? 'conf-high' : (p.confidence === 'MODERATE' ? 'conf-mod' : 'conf-low');
+
+            html += '<div class="pred-card" onclick="loadDetail(\'' + p.id + '\')">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+            html += '<div>';
+            html += '<div><span class="pred-rank">' + (p.rank || (i+1)) + '</span><span class="pred-name">' + p.name + '</span></div>';
+            html += '<div class="pred-drive">' + p.psychological_drive + '</div>';
+            html += '</div>';
+            html += '<div class="score-circle">' + (p.signal_score || '—') + '</div>';
+            html += '</div>';
+            html += '<div class="pred-prediction">' + p.entertainment_prediction + '</div>';
+            if (p.demand_gap) {
+                html += '<div style="font-size:12px;color:#4ade80;margin-bottom:8px">GAP: ' + p.demand_gap + '</div>';
+            }
+            html += '<div class="pred-meta">';
+            html += '<span><span class="conf-badge ' + confClass + '">' + p.confidence + '</span></span>';
+            html += '<span>📊 Convergence: ' + (p.convergence_score || '—') + '/10</span>';
+            html += '<span>🔗 ' + (p.source_count || '—') + ' sources</span>';
+            html += '<span>⏱ ' + (p.timeframe || '—') + '</span>';
+            html += '</div>';
+            html += '<div style="margin-top:10px;font-size:11px;color:#f59e0b">Click for full signal data →</div>';
+            html += '</div>';
+        }
+
+        document.getElementById('discoveryContent').style.display = 'none';
+        document.getElementById('predictionsList').innerHTML = html;
+        document.getElementById('predictionsList').style.display = 'block';
+
     } catch(e) {
-        document.getElementById('predictionsContainer').innerHTML = '<div class="loading" style="color:#f87171">Failed to load predictions. Refresh in 30 seconds.</div>';
+        console.error('Load predictions error:', e);
     }
 }
 
+// ============================================================
+// PREDICTION DETAIL
+// ============================================================
+async function loadDetail(id) {
+    document.getElementById('predictionsList').style.display = 'none';
+    var detail = document.getElementById('detailView');
+    detail.classList.add('on');
+    detail.innerHTML = '<div class="loading"><span class="spin"></span> Loading signal data...</div>';
+
+    try {
+        var resp = await fetch('/api/predictions/' + id);
+        if (!resp.ok) throw new Error('Not found');
+        var d = await resp.json();
+        renderDetail(d);
+    } catch(e) {
+        detail.innerHTML = '<div style="color:#f87171;padding:20px">Failed to load: ' + e.message + '</div>';
+    }
+}
+
+function hideDetail() {
+    document.getElementById('detailView').classList.remove('on');
+    document.getElementById('detailView').innerHTML = '';
+    if (document.getElementById('predictionsList').innerHTML) {
+        document.getElementById('predictionsList').style.display = 'block';
+    }
+}
+
+function renderDetail(d) {
+    var detail = document.getElementById('detailView');
+    var html = '';
+
+    html += '<button class="back-btn" onclick="hideDetail()">← Back to Predictions</button>';
+
+    // Header
+    html += '<div style="margin-bottom:20px">';
+    html += '<div style="font-size:26px;font-weight:800;color:#fff">' + d.name + '</div>';
+    html += '<div style="font-size:13px;color:#f59e0b;margin-top:4px">' + d.psychological_drive + '</div>';
+    html += '</div>';
+
+    // KPIs
+    var s = d.signal_strength || {};
+    html += '<div class="kpi-row">';
+    html += '<div class="kpi"><div class="kpi-l">Signal Score</div><div class="kpi-v amber">' + (s.overall_score || 0) + '</div></div>';
+    html += '<div class="kpi"><div class="kpi-l">Confidence</div><div class="kpi-v ' + (d.confidence === 'HIGH' ? 'green' : d.confidence === 'MODERATE' ? 'amber' : 'red') + '">' + (d.confidence || '—') + '</div></div>';
+    html += '<div class="kpi"><div class="kpi-l">Convergence</div><div class="kpi-v cyan">' + (d.convergence_score || 0) + '/10</div></div>';
+    html += '<div class="kpi"><div class="kpi-l">Sources</div><div class="kpi-v wh">' + (d.source_count || 0) + '</div></div>';
+    html += '</div>';
+
+    // Prediction
+    html += '<div class="card" style="border-left:3px solid #f59e0b">';
+    html += '<div class="card-t">Entertainment Prediction</div>';
+    html += '<div style="font-size:15px;color:#e0e0e0;line-height:1.8">' + (d.entertainment_prediction || '') + '</div>';
+    html += '</div>';
+
+    // Demand gap
+    if (d.demand_gap) {
+        html += '<div class="gap-box"><div class="gap-title">🎯 Demand Gap</div><div class="meta-text" style="color:#86efac">' + d.demand_gap + '</div></div>';
+    }
+
+    // Content opportunity
+    if (d.content_opportunity) {
+        html += '<div class="card"><div class="card-t">💡 Content Opportunity</div><div style="font-size:13px;color:#a0a0a0;line-height:1.8">' + d.content_opportunity + '</div></div>';
+    }
+
+    // Historical parallel
+    if (d.historical_parallel) {
+        html += '<div class="card"><div class="card-t">📎 Historical Parallel</div><div style="font-size:13px;color:#a0a0a0;line-height:1.8">' + d.historical_parallel + '</div></div>';
+    }
+
+    // Key signals from GPT
+    if (d.key_signals && d.key_signals.length > 0) {
+        html += '<div class="card"><div class="card-t">🔑 Key Signals Detected</div>';
+        for (var i = 0; i < d.key_signals.length; i++) {
+            html += '<div class="signal-item">' + d.key_signals[i] + '</div>';
+        }
+        html += '</div>';
+    }
+
+    // Source scores
+    if (s.source_scores) {
+        html += '<div class="card"><div class="card-t">📊 Signal Strength by Source</div>';
+        var names = Object.keys(s.source_scores);
+        for (var i = 0; i < names.length; i++) {
+            var name = names[i];
+            var src = s.source_scores[name];
+            var barColor = src.score >= 65 ? '#4ade80' : (src.score >= 40 ? '#f59e0b' : '#f87171');
+            html += '<div class="source-bar-row">';
+            html += '<div class="source-name">' + name.replace(/_/g,' ') + '</div>';
+            html += '<div class="source-bar-bg"><div class="source-bar" style="width:' + src.score + '%;background:' + barColor + '"></div></div>';
+            html += '<div class="source-val" style="color:' + barColor + '">' + src.score + '</div>';
+            html += '</div>';
+            html += '<div style="font-size:10px;color:#404040;margin:-2px 0 6px 110px">' + src.detail + '</div>';
+        }
+        html += '</div>';
+    }
+
+    // Supporting data
+    var sd = d.supporting_data || {};
+
+    // YouTube
+    if (sd.youtube) {
+        var allVids = [];
+        for (var y = 0; y < sd.youtube.length; y++) {
+            var yt = sd.youtube[y];
+            if (yt.videos) allVids = allVids.concat(yt.videos);
+        }
+        if (allVids.length > 0) {
+            html += '<div class="card"><div class="card-t">▶️ YouTube Evidence (' + allVids.length + ' videos)</div>';
+            for (var v = 0; v < Math.min(allVids.length, 8); v++) {
+                html += '<div class="yt-item"><span class="yt-title">' + allVids[v].title + '</span><span class="yt-ch"> · ' + allVids[v].channel + '</span></div>';
+            }
+            html += '</div>';
+        }
+    }
+
+    // Spotify
+    if (sd.spotify) {
+        var allPl = [];
+        for (var sp = 0; sp < sd.spotify.length; sp++) {
+            var spo = sd.spotify[sp];
+            if (spo.playlists) allPl = allPl.concat(spo.playlists);
+        }
+        if (allPl.length > 0) {
+            html += '<div class="card"><div class="card-t">🎵 Spotify Evidence (' + allPl.length + ' playlists)</div>';
+            for (var p = 0; p < Math.min(allPl.length, 8); p++) {
+                html += '<div class="yt-item"><span class="yt-title">' + allPl[p].name + '</span><span class="yt-ch"> · ' + allPl[p].tracks + ' tracks</span></div>';
+            }
+            html += '</div>';
+        }
+    }
+
+    // Wikipedia
+    if (sd.wikipedia) {
+        var wikis = sd.wikipedia.filter(function(w){return !w.error});
+        if (wikis.length > 0) {
+            html += '<div class="card"><div class="card-t">📚 Wikipedia Cultural Interest</div>';
+            for (var w = 0; w < wikis.length; w++) {
+                var wiki = wikis[w];
+                var tc = wiki.trend === 'rising' ? 'green' : (wiki.trend === 'falling' ? 'red' : 'wh');
+                html += '<div class="wiki-row"><span style="color:#e0e0e0">' + wiki.article.replace(/_/g,' ') + '</span>';
+                html += '<span><span class="' + tc + '">' + wiki.trend.toUpperCase() + '</span> · ' + wiki.daily_average + ' views/day · ' + (wiki.velocity_pct > 0 ? '+' : '') + wiki.velocity_pct + '%</span></div>';
+            }
+            html += '</div>';
+        }
+    }
+
+    // News
+    if (sd.news) {
+        var allNews = [];
+        for (var n = 0; n < sd.news.length; n++) {
+            if (sd.news[n].articles) allNews = allNews.concat(sd.news[n].articles);
+        }
+        if (allNews.length > 0) {
+            html += '<div class="card"><div class="card-t">📰 News Coverage</div>';
+            for (var a = 0; a < Math.min(allNews.length, 8); a++) {
+                html += '<div class="news-item"><span class="news-title">' + allNews[a].title + '</span><span class="news-src"> · ' + allNews[a].source + '</span></div>';
+            }
+            html += '</div>';
+        }
+    }
+
+    // What to watch
+    if (d.what_to_watch) {
+        html += '<div class="card" style="border-left:3px solid #22d3ee"><div class="card-t">👁 What to Watch For</div><div style="font-size:13px;color:#a0a0a0;line-height:1.8">' + d.what_to_watch + '</div></div>';
+    }
+
+    // Audience size
+    if (d.audience_size_estimate) {
+        html += '<div class="card"><div class="card-t">👥 Estimated Audience</div><div style="font-size:13px;color:#a0a0a0;line-height:1.8">' + d.audience_size_estimate + '</div></div>';
+    }
+
+    // Timeframe
+    html += '<div class="card"><div class="card-t">⏱ Timeframe</div><div style="font-size:14px;color:#f59e0b">' + (d.timeframe || 'Not specified') + '</div></div>';
+
+    detail.innerHTML = html;
+    window.scrollTo(0,0);
+}
+
+// ============================================================
+// RETROACTIVE PROOF
+// ============================================================
 async function loadProof() {
     try {
         var resp = await fetch('/api/analyses');
-        if (!resp.ok) throw new Error('API error');
-        analysesData = await resp.json();
-        renderProofSummary();
-        renderProofDetail('barbie', 'barbieDetail');
-        renderProofDetail('squid_game', 'squidDetail');
-        renderProofDetail('the_bear', 'bearDetail');
-    } catch(e) {
-        document.getElementById('proofSummary').innerHTML = '<div class="loading" style="color:#f87171">Failed to load. Refresh in 30 seconds.</div>';
-    }
-}
-
-// ============================================================
-// RENDER PREDICTIONS
-// ============================================================
-function renderPredictions() {
-    var preds = predictionsData.predictions;
-    document.getElementById('pubDate').textContent = predictionsData.generated_at ? predictionsData.generated_at.split('T')[0] : 'Today';
-    
-    var html = '';
-    for (var i = 0; i < preds.length; i++) {
-        var p = preds[i];
-        html += '<div class="pred-card" id="pred-' + p.id + '" onclick="togglePrediction(\'' + p.id + '\')">';
-        html += '<div class="pred-hd">';
-        html += '<div class="pred-nm">🍿 ' + p.name + '</div>';
-        html += '<div class="pred-cat">' + p.category + '</div>';
-        html += '</div>';
-        html += '<div class="pred-thesis">' + p.thesis + '</div>';
-        html += '<div class="pred-prediction">PREDICTION: ' + p.prediction + '</div>';
-        html += '<div class="pred-meta">';
-        html += '<span>⏱ ' + p.timeframe + '</span>';
-        html += '<span>📊 ' + p.search_term_count + ' search signals</span>';
-        html += '<span>🔗 ' + p.data_sources.length + ' data sources</span>';
-        html += '</div>';
-        html += '<div class="pred-detail" id="detail-' + p.id + '">';
-        html += '<div class="pred-loading">Click to load real-time signals...</div>';
-        html += '</div>';
-        html += '<div style="margin-top:10px;font-size:11px;color:#f59e0b">Click to load live signal data →</div>';
-        html += '</div>';
-    }
-    
-    document.getElementById('predictionsContainer').innerHTML = html;
-}
-
-async function togglePrediction(id) {
-    var detail = document.getElementById('detail-' + id);
-    if (detail.style.display === 'block') {
-        detail.style.display = 'none';
-        return;
-    }
-    
-    detail.style.display = 'block';
-    detail.innerHTML = '<div class="pred-loading">⏳ Pulling real-time data from all sources...</div>';
-    
-    try {
-        var resp = await fetch('/api/predictions/' + id + '/signals');
-        if (!resp.ok) throw new Error('Failed');
         var data = await resp.json();
-        renderPredictionSignals(id, data);
+        renderProof(data);
     } catch(e) {
-        detail.innerHTML = '<div class="pred-loading" style="color:#f87171">Failed to load signals. API rate limit may have been reached. Try again in 60 seconds.</div>';
+        document.getElementById('proofContent').innerHTML = '<div style="color:#f87171">Failed to load proof data.</div>';
     }
 }
 
-function renderPredictionSignals(id, data) {
-    var detail = document.getElementById('detail-' + id);
-    var s = data.signal_strength;
-    var html = '';
-    
-    // Signal strength overview
-    html += '<div class="kpi-row">';
-    html += '<div class="kpi"><div class="kpi-l">Overall Signal</div><div class="kpi-v ' + (s.overall_score >= 70 ? 'amber' : s.overall_score >= 45 ? 'cyan' : 'red') + '">' + s.overall_score + '</div><div class="kpi-s">' + s.confidence + '</div></div>';
-    html += '<div class="kpi"><div class="kpi-l">Sources Used</div><div class="kpi-v wh">' + s.sources_used + '</div><div class="kpi-s">of 7 available</div></div>';
-    html += '<div class="kpi"><div class="kpi-l">Timeframe</div><div class="kpi-v amber">' + data.timeframe + '</div></div>';
-    html += '<div class="kpi"><div class="kpi-l">Published</div><div class="kpi-v wh" style="font-size:16px">' + data.date_published + '</div></div>';
-    html += '</div>';
-    
-    // Interpretation
-    html += '<div class="thesis-box"><strong>Assessment: </strong>' + s.interpretation + '</div>';
-    
-    // Source-by-source scores
-    html += '<div class="card"><div class="card-t">Signal Strength by Source</div>';
-    var sources = s.source_scores || {};
-    var sourceNames = Object.keys(sources);
-    for (var i = 0; i < sourceNames.length; i++) {
-        var name = sourceNames[i];
-        var src = sources[name];
-        var barColor = src.score >= 70 ? '#4ade80' : (src.score >= 45 ? '#f59e0b' : '#f87171');
-        
-        html += '<div class="source-score">';
-        html += '<div class="source-name">' + name.replace(/_/g, ' ') + '</div>';
-        html += '<div class="source-bar-bg"><div class="source-bar" style="width:' + src.score + '%;background:' + barColor + '"></div></div>';
-        html += '<div class="source-val" style="color:' + barColor + '">' + src.score + '</div>';
-        html += '</div>';
-        html += '<div style="font-size:10px;color:#505050;margin:-4px 0 8px 130px">' + src.detail + '</div>';
-    }
-    html += '</div>';
-    
-    // Raw signal details
-    var rawSources = data.raw_signals ? data.raw_signals.sources : {};
-    
-    // Google Trends
-    if (rawSources.google_trends) {
-        html += '<div class="card"><div class="card-t">📈 Google Trends Signals</div>';
-        var trends = rawSources.google_trends;
-        for (var t = 0; t < trends.length; t++) {
-            var trend = trends[t];
-            if (trend.error) {
-                html += '<div style="font-size:12px;color:#f87171;margin-bottom:8px">"' + trend.term + '" — ' + trend.error + '</div>';
-                continue;
-            }
-            if (!trend.data || Object.keys(trend.data).length === 0) continue;
-            
-            var months = Object.keys(trend.data).sort();
-            var vals = months.map(function(m) { return trend.data[m]; });
-            var maxV = Math.max.apply(null, vals);
-            var firstV = vals[0];
-            var lastV = vals[vals.length - 1];
-            var vel = firstV > 0 ? Math.round(((lastV - firstV) / firstV) * 100) : 0;
-            
-            html += '<div class="sig-card">';
-            html += '<div class="sig-top"><div class="sig-term">"' + trend.term + '"</div>';
-            html += '<div style="font-size:13px;font-weight:700;' + (vel > 0 ? 'color:#4ade80' : 'color:#f87171') + ';">' + (vel > 0 ? '+' : '') + vel + '%</div></div>';
-            
-            html += '<div class="sig-chart">';
-            for (var m = 0; m < months.length; m++) {
-                var v = vals[m];
-                var h = Math.max(3, (v / Math.max(maxV, 1)) * 42);
-                html += '<div class="sig-bar" style="height:' + h + 'px;background:#f59e0b;opacity:' + (0.4 + (v / Math.max(maxV, 1)) * 0.6) + '">';
-                html += '<div class="sig-tip">' + months[m] + ': ' + v + '</div>';
-                html += '</div>';
-            }
-            html += '</div>';
-            html += '<div class="sig-dates"><span>' + months[0] + '</span><span>' + months[months.length - 1] + '</span></div>';
-            html += '</div>';
-        }
-        html += '</div>';
-    }
-    
-    // Wikipedia
-    if (rawSources.wikipedia) {
-        html += '<div class="card"><div class="card-t">📚 Wikipedia Cultural Interest</div>';
-        var wikis = rawSources.wikipedia;
-        for (var w = 0; w < wikis.length; w++) {
-            var wiki = wikis[w];
-            if (wiki.error) continue;
-            var trendColor = wiki.trend === 'rising' ? 'green' : (wiki.trend === 'falling' ? 'red' : 'wh');
-            html += '<div style="display:flex;justify-content:space-between;padding:10px;background:#0f0f0f;border-radius:6px;margin-bottom:6px">';
-            html += '<span style="font-size:13px;color:#e0e0e0">' + wiki.article.replace(/_/g, ' ') + '</span>';
-            html += '<span style="font-size:12px"><span class="' + trendColor + '">' + wiki.trend.toUpperCase() + '</span> · ' + wiki.daily_average + ' views/day · <span class="' + (wiki.velocity_pct > 0 ? 'green' : 'red') + '">' + (wiki.velocity_pct > 0 ? '+' : '') + wiki.velocity_pct + '%</span></span>';
-            html += '</div>';
-        }
-        html += '</div>';
-    }
-    
-    // YouTube
-    if (rawSources.youtube) {
-        html += '<div class="card"><div class="card-t">▶️ YouTube Signals</div>';
-        var yts = rawSources.youtube;
-        for (var y = 0; y < yts.length; y++) {
-            var yt = yts[y];
-            if (yt.error || !yt.videos) continue;
-            html += '<div style="font-size:12px;color:#f59e0b;margin-bottom:6px">"' + yt.query + '" — ' + yt.video_count + ' relevant videos</div>';
-            for (var v = 0; v < Math.min(yt.videos.length, 3); v++) {
-                var vid = yt.videos[v];
-                html += '<div style="padding:6px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:11px">';
-                html += '<span style="color:#e0e0e0">' + vid.title + '</span>';
-                html += '<span style="color:#505050"> · ' + vid.channel + '</span>';
-                html += '</div>';
-            }
-        }
-        html += '</div>';
-    }
-    
-    // Spotify
-    if (rawSources.spotify) {
-        html += '<div class="card"><div class="card-t">🎵 Spotify Cultural Signals</div>';
-        var sps = rawSources.spotify;
-        for (var sp = 0; sp < sps.length; sp++) {
-            var spo = sps[sp];
-            if (spo.error || !spo.playlists) continue;
-            html += '<div style="font-size:12px;color:#4ade80;margin-bottom:6px">"' + spo.query + '" — ' + spo.playlist_count + ' playlists found</div>';
-            for (var pl = 0; pl < Math.min(spo.playlists.length, 3); pl++) {
-                var plist = spo.playlists[pl];
-                html += '<div style="padding:6px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:11px">';
-                html += '<span style="color:#e0e0e0">' + plist.name + '</span>';
-                html += '<span style="color:#505050"> · ' + plist.tracks + ' tracks</span>';
-                html += '</div>';
-            }
-        }
-        html += '</div>';
-    }
-    
-    // News
-    if (rawSources.news) {
-        html += '<div class="card"><div class="card-t">📰 News Coverage</div>';
-        var newsList = rawSources.news;
-        for (var n = 0; n < newsList.length; n++) {
-            var news = newsList[n];
-            if (news.error || !news.articles) continue;
-            html += '<div style="font-size:12px;color:#22d3ee;margin-bottom:6px">"' + news.query + '" — ' + news.total_results + ' articles</div>';
-            for (var a = 0; a < Math.min(news.articles.length, 3); a++) {
-                var art = news.articles[a];
-                html += '<div style="padding:6px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:11px">';
-                html += '<span style="color:#e0e0e0">' + art.title + '</span>';
-                html += '<span style="color:#505050"> · ' + art.source + '</span>';
-                html += '</div>';
-            }
-        }
-        html += '</div>';
-    }
-    
-    // AO3
-    if (rawSources.ao3) {
-        html += '<div class="card"><div class="card-t">✍️ Fan Fiction Signals (AO3)</div>';
-        var ao3s = rawSources.ao3;
-        for (var f = 0; f < ao3s.length; f++) {
-            var ao3 = ao3s[f];
-            if (ao3.error) continue;
-            html += '<div style="display:flex;justify-content:space-between;padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px">';
-            html += '<span style="font-size:12px;color:#e0e0e0">"' + ao3.tag + '"</span>';
-            html += '<span style="font-size:12px;font-weight:700;color:#f59e0b">' + (ao3.work_count ? ao3.work_count.toLocaleString() : '0') + ' works</span>';
-            html += '</div>';
-        }
-        html += '</div>';
-    }
-    
-    detail.innerHTML = html;
-}
+function renderProof(data) {
+    var keys = ['barbie', 'squid_game', 'the_bear'];
+    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">';
 
-// ============================================================
-// RENDER PROOF
-// ============================================================
-function renderProofSummary() {
-    var items = [
-        {key: 'barbie', detailId: 'barbieDetail'},
-        {key: 'squid_game', detailId: 'squidDetail'},
-        {key: 'the_bear', detailId: 'bearDetail'}
-    ];
-    
-    var html = '';
-    for (var i = 0; i < items.length; i++) {
-        var d = analysesData[items[i].key];
+    for (var i = 0; i < keys.length; i++) {
+        var d = data[keys[i]];
         if (!d) continue;
-        var sc = d.popcorn_score >= 70 ? 's-hi' : (d.popcorn_score >= 45 ? 's-md' : 's-lo');
-        
-        html += '<div class="card card-click" style="text-align:center" onclick="showProofDetail(\'' + items[i].detailId + '\')">';
-        html += '<div class="score-c ' + sc + '">' + d.popcorn_score + '</div>';
-        html += '<h3>' + d.title + '</h3>';
-        html += '<div class="verdict">' + d.verdict + '</div>';
-        html += '<div class="outcome">' + d.outcome + '</div>';
-        html += '<div class="sig-count">' + d.total_signals_tracked + ' signals · ' + d.total_currents_tracked + ' currents</div>';
-        html += '<div class="hint">Click for full analysis →</div>';
+        var sc = d.popcorn_score >= 70 ? '#f59e0b' : (d.popcorn_score >= 45 ? '#22d3ee' : '#f87171');
+
+        html += '<div class="card" style="text-align:center">';
+        html += '<div class="score-circle" style="background:' + sc + ';width:70px;height:70px;font-size:24px;margin:0 auto 12px">' + d.popcorn_score + '</div>';
+        html += '<div style="font-size:18px;font-weight:700;color:#fff">' + d.title + '</div>';
+        html += '<div style="font-size:11px;color:#505050;margin-top:4px">' + d.outcome + '</div>';
+        html += '<div style="font-size:12px;color:#a0a0a0;margin-top:8px;line-height:1.6">' + d.verdict + '</div>';
         html += '</div>';
     }
-    
-    document.getElementById('proofSummary').innerHTML = html;
-    document.getElementById('conclusionArea').style.display = 'block';
-}
 
-function showProofDetail(id) {
-    document.getElementById('proofSummary').style.display = 'none';
-    document.getElementById('conclusionArea').style.display = 'none';
-    document.querySelectorAll('.detail-section').forEach(function(s) { s.classList.remove('active'); });
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0, 0);
-}
-
-function showProofMain() {
-    document.querySelectorAll('.detail-section').forEach(function(s) { s.classList.remove('active'); });
-    document.getElementById('proofSummary').style.display = '';
-    document.getElementById('conclusionArea').style.display = '';
-    window.scrollTo(0, 0);
-}
-
-function renderProofDetail(key, containerId) {
-    var d = analysesData[key];
-    if (!d) return;
-    var container = document.getElementById(containerId);
-    var html = '';
-    
-    html += '<button class="back-btn" onclick="showProofMain()">← Back</button>';
-    html += '<h2 style="font-size:26px;font-weight:800;color:#fff;margin-bottom:6px">🍿 ' + d.title + '</h2>';
-    html += '<div style="font-size:13px;color:#505050;margin-bottom:20px">Released: <span style="color:#f59e0b">' + d.release_date + '</span> · Outcome: <span style="color:#f59e0b">' + d.outcome + '</span></div>';
-    
-    // KPIs
-    html += '<div class="kpi-row">';
-    html += '<div class="kpi"><div class="kpi-l">Popcorn Score</div><div class="kpi-v amber">' + d.popcorn_score + '</div></div>';
-    html += '<div class="kpi"><div class="kpi-l">Velocity</div><div class="kpi-v green">' + d.score_breakdown.velocity_component + '</div></div>';
-    html += '<div class="kpi"><div class="kpi-l">Convergence</div><div class="kpi-v cyan">' + d.score_breakdown.convergence_component + '</div></div>';
-    html += '<div class="kpi"><div class="kpi-l">Consistency</div><div class="kpi-v wh">' + d.score_breakdown.consistency_component + '</div></div>';
     html += '</div>';
-    
-    html += '<div class="thesis-box"><strong>Thesis: </strong>' + d.thesis + '</div>';
-    
-    // Alert
-    var alert = d.what_popcorn_would_have_said;
-    html += '<div class="alert-box">';
-    html += '<div class="alert-hd"><span class="alert-badge">' + alert.alert_level + '</span><span class="alert-date">' + alert.date + '</span></div>';
-    html += '<div class="alert-txt">"' + alert.message + '"</div>';
+
+    html += '<div style="background:#0f1a0f;border:1px solid #166534;border-radius:12px;padding:20px;text-align:center">';
+    html += '<div style="font-size:18px;font-weight:700;color:#4ade80;margin-bottom:8px">✓ All Three Were Predictable</div>';
+    html += '<div style="font-size:14px;color:#a0a0a0;max-width:600px;margin:0 auto;line-height:1.7">Demand signals were detectable 3-6 months before release using only content-blind cultural signals.</div>';
     html += '</div>';
-    
-    // Currents
-    for (var c = 0; c < d.cultural_currents.length; c++) {
-        var cur = d.cultural_currents[c];
-        var strClass = cur.current_strength === 'STRONG' ? 'str-s' : (cur.current_strength === 'MODERATE' ? 'str-m' : 'str-w');
-        
-        html += '<div class="cur-section">';
-        html += '<div class="cur-hd" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">';
-        html += '<div><div class="cur-nm">' + cur.name + '</div>';
-        html += '<div class="cur-cat">' + cur.category + ' · ' + cur.signal_count + ' signals · +' + cur.avg_velocity_pct + '%</div></div>';
-        html += '<span class="str-badge ' + strClass + '">' + cur.current_strength + '</span>';
-        html += '</div>';
-        html += '<div class="cur-body">';
-        html += '<div class="cur-why">' + cur.why_it_matters + '</div>';
-        
-        for (var s = 0; s < cur.signals.length; s++) {
-            var sig = cur.signals[s];
-            var vc = sig.signal_strength === 'STRONG' ? 'green' : (sig.signal_strength === 'MODERATE' ? 'amber' : 'red');
-            var months = Object.keys(sig.monthly_data).sort();
-            var vals = months.map(function(m) { return sig.monthly_data[m]; });
-            var maxVal = Math.max.apply(null, vals);
-            
-            html += '<div class="sig-card">';
-            html += '<div class="sig-top"><div class="sig-term">"' + sig.term + '"</div><div class="sig-src">' + sig.source + '</div></div>';
-            html += '<div class="sig-stats">';
-            html += '<div class="stat"><span class="stat-l">Velocity</span><span class="stat-v ' + vc + '">+' + sig.velocity_pct + '%</span></div>';
-            html += '<div class="stat"><span class="stat-l">Consistency</span><span class="stat-v wh">' + sig.consistency_pct + '%</span></div>';
-            html += '<div class="stat"><span class="stat-l">Strength</span><span class="str-badge ' + (sig.signal_strength === 'STRONG' ? 'str-s' : sig.signal_strength === 'MODERATE' ? 'str-m' : 'str-w') + '">' + sig.signal_strength + '</span></div>';
-            html += '</div>';
-            
-            html += '<div class="sig-chart">';
-            for (var m = 0; m < months.length; m++) {
-                var v = vals[m];
-                var h = Math.max(3, (v / maxVal) * 42);
-                var barCol = m >= months.length - 2 ? '#2a2a2a' : '#f59e0b';
-                var op = m >= months.length - 2 ? 0.5 : (0.4 + (v / maxVal) * 0.6);
-                html += '<div class="sig-bar" style="height:' + h + 'px;background:' + barCol + ';opacity:' + op + '"><div class="sig-tip">' + months[m] + ': ' + v + '</div></div>';
-            }
-            html += '</div>';
-            html += '<div class="sig-dates"><span>' + months[0] + '</span><span>' + months[months.length - 1] + '</span></div>';
-            html += '<div class="sig-insight">💡 ' + sig.insight + '</div>';
-            html += '</div>';
-        }
-        
-        html += '</div></div>';
-    }
-    
-    container.innerHTML = html;
+
+    document.getElementById('proofContent').innerHTML = html;
 }
 
 // ============================================================
-// SIGNAL SCANNER
+// SCANNER
 // ============================================================
 async function runScan() {
-    var query = document.getElementById('scanInput').value.trim();
-    if (!query) return;
-    
+    var q = document.getElementById('scanInput').value.trim();
+    if (!q) return;
     var container = document.getElementById('scanResults');
-    container.innerHTML = '<div class="loading">⏳ Scanning all sources for "' + query + '"...</div>';
-    
+    container.innerHTML = '<div class="loading"><span class="spin"></span> Scanning all sources for "' + q + '"...</div>';
+
     var html = '';
-    
-    // Google Trends
+
     try {
-        var resp = await fetch('/api/scan/trends?terms=' + encodeURIComponent(query));
-        var data = await resp.json();
-        if (data.results && data.results.length > 0 && data.results[0].data) {
-            var t = data.results[0];
-            var months = Object.keys(t.data).sort();
-            var vals = months.map(function(m) { return t.data[m]; });
-            var maxV = Math.max.apply(null, vals);
-            
-            html += '<div class="card"><div class="card-t">📈 Google Trends: "' + query + '"</div>';
-            html += '<div class="sig-chart" style="height:60px">';
-            for (var i = 0; i < months.length; i++) {
-                var v = vals[i];
-                var h = Math.max(3, (v / Math.max(maxV, 1)) * 57);
-                html += '<div class="sig-bar" style="height:' + h + 'px;background:#f59e0b;opacity:' + (0.4 + (v / Math.max(maxV, 1)) * 0.6) + '"><div class="sig-tip">' + months[i] + ': ' + v + '</div></div>';
-            }
-            html += '</div>';
-            html += '<div class="sig-dates"><span>' + months[0] + '</span><span>' + months[months.length - 1] + '</span></div></div>';
-        }
-    } catch(e) { html += '<div class="card" style="color:#f87171">Google Trends: Rate limited. Try again in 60s.</div>'; }
-    
-    // YouTube
-    try {
-        var resp = await fetch('/api/scan/youtube?q=' + encodeURIComponent(query));
-        var data = await resp.json();
-        if (data.videos && data.videos.length > 0) {
-            html += '<div class="card"><div class="card-t">▶️ YouTube: ' + data.video_count + ' videos found</div>';
-            for (var i = 0; i < Math.min(data.videos.length, 5); i++) {
-                var vid = data.videos[i];
-                html += '<div style="padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:12px">';
-                html += '<span style="color:#e0e0e0">' + vid.title + '</span>';
-                html += '<span style="color:#505050"> · ' + vid.channel + '</span>';
-                html += '</div>';
+        var r = await fetch('/api/scan/youtube?q=' + encodeURIComponent(q));
+        var d = await r.json();
+        if (d.videos && d.videos.length > 0) {
+            html += '<div class="card"><div class="card-t">▶️ YouTube: ' + d.video_count + ' videos</div>';
+            for (var i = 0; i < Math.min(d.videos.length, 5); i++) {
+                html += '<div class="yt-item"><span class="yt-title">' + d.videos[i].title + '</span><span class="yt-ch"> · ' + d.videos[i].channel + '</span></div>';
             }
             html += '</div>';
         }
-    } catch(e) {}
-    
-    // Spotify
+    } catch(e){}
+
     try {
-        var resp = await fetch('/api/scan/spotify?q=' + encodeURIComponent(query));
-        var data = await resp.json();
-        if (data.playlists && data.playlists.length > 0) {
-            html += '<div class="card"><div class="card-t">🎵 Spotify: ' + data.playlist_count + ' playlists</div>';
-            for (var i = 0; i < Math.min(data.playlists.length, 5); i++) {
-                var pl = data.playlists[i];
-                html += '<div style="padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:12px">';
-                html += '<span style="color:#e0e0e0">' + pl.name + '</span>';
-                html += '<span style="color:#505050"> · ' + pl.tracks + ' tracks</span>';
-                html += '</div>';
+        var r = await fetch('/api/scan/spotify?q=' + encodeURIComponent(q));
+        var d = await r.json();
+        if (d.playlists && d.playlists.length > 0) {
+            html += '<div class="card"><div class="card-t">🎵 Spotify: ' + d.playlist_count + ' playlists</div>';
+            for (var i = 0; i < Math.min(d.playlists.length, 5); i++) {
+                html += '<div class="yt-item"><span class="yt-title">' + d.playlists[i].name + '</span><span class="yt-ch"> · ' + d.playlists[i].tracks + ' tracks</span></div>';
             }
             html += '</div>';
         }
-    } catch(e) {}
-    
-    // Wikipedia
+    } catch(e){}
+
     try {
-        var article = query.replace(/ /g, '_');
-        var resp = await fetch('/api/scan/wikipedia?articles=' + encodeURIComponent(article));
-        var data = await resp.json();
-        if (data.results && data.results.length > 0 && !data.results[0].error) {
-            var w = data.results[0];
-            html += '<div class="card"><div class="card-t">📚 Wikipedia: "' + w.article.replace(/_/g, ' ') + '"</div>';
-            html += '<div style="font-size:14px;color:#e0e0e0">' + w.daily_average + ' views/day · ';
-            html += '<span class="' + (w.trend === 'rising' ? 'green' : w.trend === 'falling' ? 'red' : 'wh') + '">' + w.trend.toUpperCase() + ' (' + (w.velocity_pct > 0 ? '+' : '') + w.velocity_pct + '%)</span></div>';
-            html += '</div>';
+        var a = q.replace(/ /g, '_');
+        var r = await fetch('/api/scan/wikipedia?articles=' + encodeURIComponent(a));
+        var d = await r.json();
+        if (d.results && d.results.length > 0 && !d.results[0].error) {
+            var w = d.results[0];
+            html += '<div class="card"><div class="card-t">📚 Wikipedia: "' + w.article.replace(/_/g,' ') + '"</div>';
+            html += '<div style="font-size:14px;color:#e0e0e0">' + w.daily_average + ' views/day · <span class="' + (w.trend==='rising'?'green':w.trend==='falling'?'red':'wh') + '">' + w.trend.toUpperCase() + ' (' + (w.velocity_pct>0?'+':'') + w.velocity_pct + '%)</span></div></div>';
         }
-    } catch(e) {}
-    
-    // News
+    } catch(e){}
+
     try {
-        var resp = await fetch('/api/scan/news?q=' + encodeURIComponent(query));
-        var data = await resp.json();
-        if (data.articles && data.articles.length > 0) {
-            html += '<div class="card"><div class="card-t">📰 News: ' + data.total_results + ' articles</div>';
-            for (var i = 0; i < Math.min(data.articles.length, 5); i++) {
-                var art = data.articles[i];
-                html += '<div style="padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:12px">';
-                html += '<a href="' + art.url + '" target="_blank" style="color:#22d3ee;text-decoration:none">' + art.title + '</a>';
-                html += '<span style="color:#505050"> · ' + art.source + '</span>';
-                html += '</div>';
+        var r = await fetch('/api/scan/news?q=' + encodeURIComponent(q));
+        var d = await r.json();
+        if (d.articles && d.articles.length > 0) {
+            html += '<div class="card"><div class="card-t">📰 News: ' + d.total_results + ' articles</div>';
+            for (var i = 0; i < Math.min(d.articles.length, 5); i++) {
+                html += '<div class="news-item"><a href="' + d.articles[i].url + '" target="_blank" class="news-title">' + d.articles[i].title + '</a><span class="news-src"> · ' + d.articles[i].source + '</span></div>';
             }
             html += '</div>';
         }
-    } catch(e) {}
-    
-    // Books
+    } catch(e){}
+
     try {
-        var resp = await fetch('/api/scan/books?q=' + encodeURIComponent(query));
-        var data = await resp.json();
-        if (data.books && data.books.length > 0) {
-            html += '<div class="card"><div class="card-t">📖 Books: ' + data.total_found + ' found</div>';
-            for (var i = 0; i < Math.min(data.books.length, 5); i++) {
-                var book = data.books[i];
-                html += '<div style="padding:8px 10px;background:#0f0f0f;border-radius:4px;margin-bottom:4px;font-size:12px">';
-                html += '<span style="color:#e0e0e0">' + book.title + '</span>';
-                html += '<span style="color:#505050"> · ' + book.author + '</span>';
-                html += '</div>';
+        var r = await fetch('/api/scan/books?q=' + encodeURIComponent(q));
+        var d = await r.json();
+        if (d.books && d.books.length > 0) {
+            html += '<div class="card"><div class="card-t">📖 Books: ' + d.total_found + ' found</div>';
+            for (var i = 0; i < Math.min(d.books.length, 5); i++) {
+                html += '<div class="yt-item"><span class="yt-title">' + d.books[i].title + '</span><span class="yt-ch"> · ' + d.books[i].author + '</span></div>';
             }
             html += '</div>';
         }
-    } catch(e) {}
-    
-    if (!html) html = '<div class="card" style="color:#505050;text-align:center;padding:30px">No signals found. Try a different search term.</div>';
-    
+    } catch(e){}
+
+    if (!html) html = '<div class="card" style="text-align:center;color:#505050;padding:30px">No signals found. Try different terms.</div>';
     container.innerHTML = html;
 }
 
-// Enter key support for scanner
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function(){
     var input = document.getElementById('scanInput');
-    if (input) input.addEventListener('keypress', function(e) { if (e.key === 'Enter') runScan(); });
+    if(input) input.addEventListener('keypress', function(e){if(e.key==='Enter')runScan()});
 });
 
-// Load everything
-loadAll();
+// ============================================================
+// STARTUP
+// ============================================================
+checkStatus();
+pollInterval = setInterval(checkStatus, 15000);
 </script>
 </body>
 </html>
