@@ -1,7 +1,7 @@
 """
-Popcorn AI v3.2 — Fixed for Render free tier
-All API calls happen on a manual refresh trigger, not on page click.
-Prediction clicks show cached data instantly.
+Popcorn AI v4.0 — Auto-Discovery Engine
+GPT-4o analyzes signals from 8+ sources and generates
+predictions automatically. No human input needed.
 """
 
 from flask import Flask, jsonify, send_from_directory, request
@@ -11,252 +11,277 @@ import threading
 import time as t
 from datetime import datetime
 from data_collectors import (
-    get_google_trends,
+    harvest_all_signals,
+    ask_gpt_json,
     search_youtube,
     search_spotify_playlists,
-    get_wikipedia_pageviews,
     get_wikipedia_batch,
-    get_tmdb_trending,
-    search_tmdb,
     search_news,
-    get_entertainment_headlines,
-    get_ao3_tag_count,
     get_ao3_batch,
-    search_open_library,
+    search_tmdb,
+    get_google_trends,
     get_google_trends_batch,
     get_youtube_trending_by_category,
+    get_tmdb_trending,
     get_tmdb_upcoming_movies,
+    get_entertainment_headlines,
+    search_open_library,
 )
 
 app = Flask(__name__, static_folder='public', static_url_path='')
 
 # ============================================================
-# SIGNAL CACHE — All prediction data is pre-computed
+# STATE
 # ============================================================
-signal_cache = {}
-cache_loading = False
-cache_loaded = False
-cache_status = 'not started'
+discovery_cache = {
+    'predictions': [],
+    'raw_signals': {},
+    'analysis': None,
+    'status': 'not started',
+    'loading': False,
+    'last_run': None,
+    'error': None,
+}
 
-PREDICTIONS = [
+THE_PROMPT = """You are Popcorn AI, an audience demand intelligence system for the entertainment industry.
+
+I'm giving you raw signals harvested from 8 data sources: YouTube trending videos, YouTube cultural searches, Spotify playlist trends, Wikipedia cultural article traffic, entertainment news headlines, cultural news articles, AO3 fan fiction tag popularity, and TMDB trending/upcoming content.
+
+Your job is to analyze ALL of these signals and identify CULTURAL CURRENTS — underlying psychological themes that connect multiple signals across multiple platforms.
+
+RULES:
+1. Only identify currents supported by 3+ INDEPENDENT data sources
+2. Focus on AUDIENCE PSYCHOLOGY not content analysis
+3. Each current must have a clear ENTERTAINMENT IMPLICATION
+4. Be SPECIFIC about what content would satisfy each craving
+5. Include a DEMAND GAP — what audiences want that nobody is making
+6. Rate confidence based on how many sources converge
+7. Compare to historical patterns (pre-Barbie, pre-Squid Game, pre-Bear)
+
+Return a JSON object with this EXACT structure:
+{
+  "scan_date": "YYYY-MM-DD",
+  "total_signals_analyzed": <number>,
+  "cultural_currents": [
     {
-        'id': 'analog-humanity',
-        'name': 'The Human Premium',
-        'category': 'Cultural Collision',
-        'thesis': 'AI anxiety is driving a counter-movement celebrating irreplaceable human qualities — craftsmanship, physical presence, emotional intuition, and analog experiences.',
-        'prediction': 'Content celebrating handmade craft, analog experiences, and human connection will outperform digital/tech-focused content by 2-3x within 12 months.',
-        'timeframe': '6-12 months',
-        'date_published': '2025-04-10',
-        'search_terms': ['analog lifestyle', 'digital detox', 'handmade crafts', 'film photography', 'vinyl records'],
-        'wiki_articles': ['Slow_movement_(culture)', 'Handicraft', 'Vinyl_revival'],
-        'ao3_tags': ['Domestic Fluff', 'Cottagecore', 'Slice of Life'],
-        'news_queries': ['analog renaissance', 'handmade crafts trend'],
-        'spotify_queries': ['acoustic chill', 'folk and craft'],
-    },
-    {
-        'id': 'male-vulnerability',
-        'name': 'Male Emotional Awakening',
-        'category': 'Psychological Drive',
-        'thesis': 'Male mental health discourse has exploded. Content featuring genuinely open male characters will find a massive underserved audience.',
-        'prediction': 'A show or film featuring a male lead whose primary arc is emotional vulnerability will become a top-10 cultural moment within 18 months.',
-        'timeframe': '6-18 months',
-        'date_published': '2025-04-10',
-        'search_terms': ['mens mental health', 'therapy for men', 'male vulnerability', 'toxic masculinity', 'men emotional support'],
-        'wiki_articles': ['Masculinity', 'Mental_health_of_men', 'Toxic_masculinity'],
-        'ao3_tags': ['Hurt/Comfort', 'Emotional Hurt/Comfort', 'Male Friendship'],
-        'news_queries': ['men mental health crisis', 'male vulnerability culture'],
-        'spotify_queries': ['sad songs for men', 'emotional healing'],
-    },
-    {
-        'id': 'found-family',
-        'name': 'Found Family Renaissance',
-        'category': 'Belonging Drive',
-        'thesis': 'Loneliness epidemic plus declining traditional family structures are driving massive demand for stories about chosen families.',
-        'prediction': 'The next breakout ensemble show will center on found family dynamics in a non-traditional setting.',
-        'timeframe': '3-12 months',
-        'date_published': '2025-04-10',
-        'search_terms': ['loneliness epidemic', 'found family', 'chosen family', 'making friends as adult', 'third places'],
-        'wiki_articles': ['Loneliness', 'Chosen_family', 'Third_place'],
-        'ao3_tags': ['Found Family', 'Chosen Family', 'Team as Family'],
-        'news_queries': ['loneliness epidemic america', 'community building trend'],
-        'spotify_queries': ['feel good community', 'friendship anthems'],
-    },
-    {
-        'id': 'class-consciousness',
-        'name': 'Working Class Visibility',
-        'category': 'Identity Demand',
-        'thesis': '74% of Americans work outside offices but nearly all prestige content depicts upper-middle-class life.',
-        'prediction': 'At least two major streaming shows set in blue-collar environments will be greenlit and one will become a top performer within 18 months.',
-        'timeframe': '6-18 months',
-        'date_published': '2025-04-10',
-        'search_terms': ['working class tv shows', 'blue collar jobs', 'skilled trades career', 'trade school vs college', 'working class representation'],
-        'wiki_articles': ['Working_class', 'Blue-collar_worker', 'Trades_(occupation)'],
-        'ao3_tags': ['Working Class', 'Blue Collar', 'Slice of Life'],
-        'news_queries': ['skilled trades shortage', 'blue collar renaissance'],
-        'spotify_queries': ['working class anthems', 'blue collar playlist'],
-    },
-    {
-        'id': 'spiritual-not-religious',
-        'name': 'Secular Spirituality Wave',
-        'category': 'Meaning Drive',
-        'thesis': 'Spiritual but not religious is the fastest growing identity category in under-40 demographics. Zero mainstream entertainment takes spirituality seriously.',
-        'prediction': 'A prestige series treating non-religious spirituality with the seriousness The Bear treats cooking will become a cultural touchstone.',
-        'timeframe': '12-24 months',
-        'date_published': '2025-04-10',
-        'search_terms': ['spiritual but not religious', 'meditation benefits', 'psychedelic therapy', 'meaning of life', 'spiritual awakening'],
-        'wiki_articles': ['Spiritual_but_not_religious', 'Meditation', 'Psychedelic_therapy'],
-        'ao3_tags': ['Spiritual', 'Meditation', 'Magical Realism'],
-        'news_queries': ['psychedelic therapy legalization', 'meditation mainstream'],
-        'spotify_queries': ['meditation music', 'spiritual journey'],
-    },
-]
+      "name": "Name of the cultural current",
+      "rank": 1,
+      "psychological_drive": "The underlying human need driving this",
+      "confidence": "HIGH/MODERATE/LOW",
+      "convergence_score": <number 1-10>,
+      "supporting_sources": ["YouTube", "Spotify", "Wikipedia", etc],
+      "source_count": <number>,
+      "key_signals": [
+        "Specific signal from Source A",
+        "Specific signal from Source B",
+        "Specific signal from Source C"
+      ],
+      "audience_size_estimate": "Description of how large the audience is",
+      "entertainment_prediction": "Specific prediction about what content will succeed",
+      "demand_gap": "What audiences want that nobody is currently making",
+      "content_opportunity": "Specific description of the content that would capture this demand",
+      "historical_parallel": "Which past hit followed a similar pattern and why",
+      "timeframe": "When this demand will peak",
+      "what_to_watch": "Specific metrics to monitor to track this current"
+    }
+  ],
+  "meta_analysis": "Overall summary of the cultural moment — what is the dominant psychological state of the American entertainment audience right now?",
+  "biggest_gap": "The single largest unserved demand in entertainment right now",
+  "collision_alert": "Are any currents converging in a way that resembles pre-Barbie or pre-Squid-Game conditions? If so, describe."
+}
+
+Identify 5-8 cultural currents, ranked by confidence and convergence score.
+
+HERE IS THE RAW SIGNAL DATA:
+
+"""
 
 
-# ============================================================
-# BACKGROUND DATA LOADER
-# ============================================================
-def load_all_signals():
-    global signal_cache, cache_loading, cache_loaded, cache_status
+def run_auto_discovery():
+    global discovery_cache
+    discovery_cache['loading'] = True
+    discovery_cache['status'] = 'harvesting signals'
+    discovery_cache['error'] = None
 
-    cache_loading = True
-    cache_status = 'loading'
+    try:
+        # Step 1: Harvest all signals
+        print('[Popcorn] === AUTO-DISCOVERY STARTING ===')
+        raw_signals = harvest_all_signals()
+        discovery_cache['raw_signals'] = raw_signals
+        discovery_cache['status'] = 'analyzing with GPT-4o'
 
-    for pred in PREDICTIONS:
-        pid = pred['id']
-        print('[Popcorn] Loading signals for: ' + pred['name'])
+        # Step 2: Build the prompt with all signal data
+        signal_text = json.dumps(raw_signals, indent=2, default=str)
 
-        signals = {'sources': {}, 'collected_at': datetime.utcnow().isoformat()}
+        # Truncate if too long (GPT-4o context limit)
+        if len(signal_text) > 50000:
+            signal_text = signal_text[:50000] + '\n... [truncated for length]'
 
-        # YouTube (fast, reliable)
-        try:
-            yt = []
-            for term in pred['search_terms'][:2]:
-                yt.append(search_youtube(term, max_results=5))
-                t.sleep(1)
-            signals['sources']['youtube'] = yt
-            print('[Popcorn]   YouTube OK')
-        except Exception as e:
-            print('[Popcorn]   YouTube FAIL: ' + str(e))
-            signals['sources']['youtube'] = []
+        full_prompt = THE_PROMPT + signal_text
 
-        # Spotify (fast, reliable)
-        try:
-            sp = []
-            for q in pred.get('spotify_queries', [])[:2]:
-                sp.append(search_spotify_playlists(q, limit=5))
-                t.sleep(1)
-            signals['sources']['spotify'] = sp
-            print('[Popcorn]   Spotify OK')
-        except Exception as e:
-            print('[Popcorn]   Spotify FAIL: ' + str(e))
-            signals['sources']['spotify'] = []
+        # Step 3: Send to GPT-4o
+        print('[Popcorn] Sending to GPT-4o for analysis...')
+        analysis = ask_gpt_json(full_prompt, max_tokens=4000)
 
-        # Wikipedia (fast, reliable)
-        try:
-            signals['sources']['wikipedia'] = get_wikipedia_batch(pred['wiki_articles'][:3])
-            print('[Popcorn]   Wikipedia OK')
-        except Exception as e:
-            print('[Popcorn]   Wikipedia FAIL: ' + str(e))
-            signals['sources']['wikipedia'] = []
+        if analysis is None:
+            discovery_cache['error'] = 'GPT-4o returned no response'
+            discovery_cache['status'] = 'error'
+            discovery_cache['loading'] = False
+            print('[Popcorn] ERROR: GPT returned None')
+            return
 
-        # News (fast, reliable)
-        try:
-            news = []
-            for q in pred['news_queries'][:2]:
-                news.append(search_news(q, days_back=30, page_size=5))
-                t.sleep(1)
-            signals['sources']['news'] = news
-            print('[Popcorn]   News OK')
-        except Exception as e:
-            print('[Popcorn]   News FAIL: ' + str(e))
-            signals['sources']['news'] = []
+        # Step 4: Enrich each prediction with live data
+        print('[Popcorn] Enriching predictions with source data...')
+        discovery_cache['status'] = 'enriching with live data'
 
-        # AO3 (slow but reliable)
-        try:
-            signals['sources']['ao3'] = get_ao3_batch(pred['ao3_tags'][:3])
-            print('[Popcorn]   AO3 OK')
-        except Exception as e:
-            print('[Popcorn]   AO3 FAIL: ' + str(e))
-            signals['sources']['ao3'] = []
+        currents = analysis.get('cultural_currents', [])
+        enriched_predictions = []
 
-        # TMDB (fast)
-        try:
-            tmdb = []
-            for term in pred['search_terms'][:1]:
-                tmdb.append(search_tmdb(term))
-            signals['sources']['tmdb'] = tmdb
-            print('[Popcorn]   TMDB OK')
-        except Exception as e:
-            print('[Popcorn]   TMDB FAIL: ' + str(e))
-            signals['sources']['tmdb'] = []
+        for current in currents[:8]:
+            print('[Popcorn] Enriching: ' + current.get('name', 'Unknown'))
 
-        # Google Trends (slow, unreliable — do last, skip if fails)
-        try:
-            trends = []
-            for term in pred['search_terms'][:3]:
-                trends.append(get_google_trends(term, 'today 12-m'))
-                t.sleep(8)
-            signals['sources']['google_trends'] = trends
-            print('[Popcorn]   Trends OK')
-        except Exception as e:
-            print('[Popcorn]   Trends FAIL (non-fatal): ' + str(e))
-            signals['sources']['google_trends'] = []
+            # Generate search terms from the current
+            search_terms = generate_search_terms(current)
 
-        # Calculate strength
-        strength = calc_strength(signals)
+            # Pull supporting data
+            supporting_data = {}
 
-        signal_cache[pid] = {
-            'prediction_id': pid,
-            'prediction_name': pred['name'],
-            'thesis': pred['thesis'],
-            'prediction_text': pred['prediction'],
-            'timeframe': pred['timeframe'],
-            'date_published': pred['date_published'],
-            'signal_strength': strength,
-            'raw_signals': signals,
-            'collected_at': datetime.utcnow().isoformat(),
+            # YouTube
+            try:
+                yt = []
+                for term in search_terms[:3]:
+                    yt.append(search_youtube(term, max_results=5))
+                    t.sleep(0.5)
+                supporting_data['youtube'] = yt
+            except Exception:
+                supporting_data['youtube'] = []
+
+            # Spotify
+            try:
+                sp = []
+                for term in search_terms[:3]:
+                    sp.append(search_spotify_playlists(term, limit=5))
+                    t.sleep(0.5)
+                supporting_data['spotify'] = sp
+            except Exception:
+                supporting_data['spotify'] = []
+
+            # Wikipedia
+            try:
+                wiki_terms = [term.replace(' ', '_') for term in search_terms[:3]]
+                supporting_data['wikipedia'] = get_wikipedia_batch(wiki_terms)
+            except Exception:
+                supporting_data['wikipedia'] = []
+
+            # News
+            try:
+                news = []
+                for term in search_terms[:2]:
+                    news.append(search_news(term, days_back=30, page_size=5))
+                    t.sleep(0.5)
+                supporting_data['news'] = news
+            except Exception:
+                supporting_data['news'] = []
+
+            # Score it
+            strength = calc_strength(supporting_data)
+
+            enriched_predictions.append({
+                'id': current.get('name', 'unknown').lower().replace(' ', '-').replace('/', '-')[:30],
+                'name': current.get('name', 'Unknown Current'),
+                'rank': current.get('rank', 0),
+                'psychological_drive': current.get('psychological_drive', ''),
+                'confidence': current.get('confidence', 'LOW'),
+                'convergence_score': current.get('convergence_score', 0),
+                'supporting_sources': current.get('supporting_sources', []),
+                'source_count': current.get('source_count', 0),
+                'key_signals': current.get('key_signals', []),
+                'audience_size_estimate': current.get('audience_size_estimate', ''),
+                'entertainment_prediction': current.get('entertainment_prediction', ''),
+                'demand_gap': current.get('demand_gap', ''),
+                'content_opportunity': current.get('content_opportunity', ''),
+                'historical_parallel': current.get('historical_parallel', ''),
+                'timeframe': current.get('timeframe', ''),
+                'what_to_watch': current.get('what_to_watch', ''),
+                'signal_strength': strength,
+                'supporting_data': supporting_data,
+                'search_terms_used': search_terms,
+                'generated_at': datetime.utcnow().isoformat(),
+            })
+
+        # Step 5: Store everything
+        discovery_cache['predictions'] = enriched_predictions
+        discovery_cache['analysis'] = {
+            'meta_analysis': analysis.get('meta_analysis', ''),
+            'biggest_gap': analysis.get('biggest_gap', ''),
+            'collision_alert': analysis.get('collision_alert', ''),
+            'total_signals': analysis.get('total_signals_analyzed', 0),
+            'scan_date': analysis.get('scan_date', datetime.utcnow().strftime('%Y-%m-%d')),
         }
+        discovery_cache['status'] = 'loaded'
+        discovery_cache['last_run'] = datetime.utcnow().isoformat()
+        discovery_cache['loading'] = False
 
-        print('[Popcorn] Done: ' + pred['name'] + ' (score: ' + str(strength['overall_score']) + ')')
+        print('[Popcorn] === AUTO-DISCOVERY COMPLETE ===')
+        print('[Popcorn] Generated ' + str(len(enriched_predictions)) + ' predictions')
 
-    cache_loading = False
-    cache_loaded = True
-    cache_status = 'loaded'
-    print('[Popcorn] All predictions loaded. ' + str(len(signal_cache)) + ' cached.')
+    except Exception as e:
+        print('[Popcorn] CRITICAL ERROR: ' + str(e))
+        discovery_cache['error'] = str(e)
+        discovery_cache['status'] = 'error'
+        discovery_cache['loading'] = False
 
 
-def calc_strength(signals):
+def generate_search_terms(current):
+    name = current.get('name', '')
+    drive = current.get('psychological_drive', '')
+    gap = current.get('demand_gap', '')
+    opportunity = current.get('content_opportunity', '')
+
+    terms = set()
+
+    for text in [name, drive, gap, opportunity]:
+        words = text.lower().replace(',', ' ').replace('.', ' ').replace('/', ' ').split()
+        # Extract 2-3 word phrases
+        for i in range(len(words)):
+            if i < len(words) - 1:
+                phrase = words[i] + ' ' + words[i + 1]
+                if len(phrase) > 5 and len(phrase) < 40:
+                    terms.add(phrase)
+            if i < len(words) - 2:
+                phrase = words[i] + ' ' + words[i + 1] + ' ' + words[i + 2]
+                if len(phrase) > 8 and len(phrase) < 40:
+                    terms.add(phrase)
+
+    # Add the name itself
+    terms.add(name.lower())
+
+    # Filter out garbage
+    stop_words = {'the', 'and', 'for', 'that', 'this', 'with', 'from', 'are', 'but', 'not', 'has', 'have', 'will', 'about'}
+    filtered = []
+    for term in terms:
+        words = term.split()
+        if not all(w in stop_words for w in words):
+            filtered.append(term)
+
+    return filtered[:10]
+
+
+def calc_strength(sources):
     scores = {}
     total = 0
     count = 0
-    sources = signals.get('sources', {})
-
-    if 'google_trends' in sources:
-        vels = []
-        for tr in sources['google_trends']:
-            if isinstance(tr, dict) and tr.get('data') and not tr.get('error'):
-                data = tr['data']
-                months = sorted(data.keys())
-                if len(months) >= 2:
-                    v = ((data[months[-1]] - data[months[0]]) / max(data[months[0]], 1)) * 100
-                    vels.append(v)
-        if vels:
-            avg = sum(vels) / len(vels)
-            sc = min(100, max(0, avg + 50))
-            scores['google_trends'] = {'score': round(sc), 'detail': str(round(avg, 1)) + '% velocity across ' + str(len(vels)) + ' terms'}
-            total += sc
-            count += 1
 
     if 'youtube' in sources:
         vids = sum(r.get('video_count', 0) for r in sources['youtube'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, vids * 5)
-        scores['youtube'] = {'score': round(sc), 'detail': str(vids) + ' videos found'}
+        sc = min(100, vids * 4)
+        scores['youtube'] = {'score': round(sc), 'detail': str(vids) + ' videos'}
         total += sc
         count += 1
 
     if 'spotify' in sources:
         pls = sum(r.get('playlist_count', 0) for r in sources['spotify'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, pls * 8)
+        sc = min(100, pls * 6)
         scores['spotify'] = {'score': round(sc), 'detail': str(pls) + ' playlists'}
         total += sc
         count += 1
@@ -264,39 +289,25 @@ def calc_strength(signals):
     if 'wikipedia' in sources:
         rising = sum(1 for w in sources['wikipedia'] if isinstance(w, dict) and w.get('trend') == 'rising')
         tot = len([w for w in sources['wikipedia'] if isinstance(w, dict) and not w.get('error')])
-        sc = min(100, (rising / max(tot, 1)) * 100)
-        scores['wikipedia'] = {'score': round(sc), 'detail': str(rising) + '/' + str(tot) + ' rising'}
+        total_views = sum(w.get('daily_average', 0) for w in sources['wikipedia'] if isinstance(w, dict) and not w.get('error'))
+        sc = min(100, max((rising / max(tot, 1)) * 60, min(total_views / 50, 40)))
+        scores['wikipedia'] = {'score': round(sc), 'detail': str(rising) + '/' + str(tot) + ' rising, ' + str(total_views) + ' daily views'}
         total += sc
         count += 1
 
     if 'news' in sources:
         arts = sum(r.get('total_results', 0) for r in sources['news'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, arts * 2)
+        sc = min(100, arts)
         scores['news'] = {'score': round(sc), 'detail': str(arts) + ' articles'}
-        total += sc
-        count += 1
-
-    if 'ao3' in sources:
-        works = sum(r.get('work_count', 0) for r in sources['ao3'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, (works / 1000) * 10)
-        scores['ao3'] = {'score': round(sc), 'detail': str(works) + ' works'}
-        total += sc
-        count += 1
-
-    if 'tmdb' in sources:
-        res = sum(r.get('count', 0) for r in sources['tmdb'] if isinstance(r, dict) and not r.get('error'))
-        sc = min(100, max(0, 100 - (res * 8)))
-        scores['tmdb'] = {'score': round(sc), 'detail': str(res) + ' titles (less = bigger gap)'}
         total += sc
         count += 1
 
     overall = round(total / max(count, 1))
     return {
         'overall_score': overall,
-        'confidence': 'HIGH' if overall >= 70 else ('MODERATE' if overall >= 45 else 'LOW'),
+        'confidence': 'HIGH' if overall >= 65 else ('MODERATE' if overall >= 40 else 'LOW'),
         'sources_used': count,
         'source_scores': scores,
-        'interpretation': 'Strong signals.' if overall >= 70 else ('Moderate signals.' if overall >= 45 else 'Early signals.'),
     }
 
 
@@ -312,14 +323,17 @@ def index():
 def health():
     return jsonify({
         'status': 'ok',
-        'version': '3.2',
-        'cache_status': cache_status,
-        'predictions_cached': len(signal_cache),
+        'version': '4.0 — Auto-Discovery',
+        'discovery_status': discovery_cache['status'],
+        'predictions_generated': len(discovery_cache['predictions']),
+        'last_run': discovery_cache['last_run'],
+        'error': discovery_cache['error'],
         'data_sources': {
             'youtube': bool(os.environ.get('YOUTUBE_API_KEY')),
             'spotify': bool(os.environ.get('SPOTIFY_CLIENT_ID')),
             'tmdb': bool(os.environ.get('TMDB_API_KEY')),
             'news': bool(os.environ.get('NEWS_API_KEY')),
+            'openai': bool(os.environ.get('OPENAI_API_KEY')),
             'google_trends': True,
             'wikipedia': True,
             'ao3': True,
@@ -327,67 +341,58 @@ def health():
     })
 
 
+@app.route('/api/discover', methods=['POST'])
+def trigger_discovery():
+    if discovery_cache['loading']:
+        return jsonify({'message': 'Already running. Check /api/health for status.'}), 429
+    thread = threading.Thread(target=run_auto_discovery, daemon=True)
+    thread.start()
+    return jsonify({'message': 'Auto-discovery started. This takes 5-10 minutes. Check /api/health for status.'})
+
+
 @app.route('/api/predictions')
 def get_predictions():
     preds = []
-    for p in PREDICTIONS:
-        cached = signal_cache.get(p['id'])
+    for p in discovery_cache['predictions']:
         preds.append({
             'id': p['id'],
             'name': p['name'],
-            'category': p['category'],
-            'thesis': p['thesis'],
-            'prediction': p['prediction'],
+            'rank': p['rank'],
+            'psychological_drive': p['psychological_drive'],
+            'confidence': p['confidence'],
+            'convergence_score': p['convergence_score'],
+            'source_count': p['source_count'],
+            'entertainment_prediction': p['entertainment_prediction'],
+            'demand_gap': p['demand_gap'],
             'timeframe': p['timeframe'],
-            'date_published': p['date_published'],
-            'search_term_count': len(p['search_terms']),
-            'data_sources': ['Google Trends', 'YouTube', 'Spotify', 'Wikipedia', 'NewsAPI', 'AO3', 'TMDB'],
-            'signal_score': cached['signal_strength']['overall_score'] if cached else None,
-            'data_ready': cached is not None,
+            'signal_score': p['signal_strength']['overall_score'],
+            'generated_at': p['generated_at'],
         })
+
     return jsonify({
         'count': len(preds),
         'predictions': preds,
-        'cache_status': cache_status,
+        'analysis': discovery_cache.get('analysis'),
+        'status': discovery_cache['status'],
+        'last_run': discovery_cache['last_run'],
         'generated_at': datetime.utcnow().isoformat(),
     })
 
 
-@app.route('/api/predictions/<prediction_id>/signals')
-def get_signals(prediction_id):
-    # Return cached data INSTANTLY
-    if prediction_id in signal_cache:
-        return jsonify(signal_cache[prediction_id])
-
-    # Not cached yet
-    if cache_loading:
-        return jsonify({'error': 'Data is still loading. Try again in 2-3 minutes.', 'status': 'loading'}), 202
-
-    return jsonify({'error': 'No data yet. Trigger a refresh first.', 'status': 'not_loaded'}), 404
+@app.route('/api/predictions/<prediction_id>')
+def get_prediction_detail(prediction_id):
+    for p in discovery_cache['predictions']:
+        if p['id'] == prediction_id:
+            return jsonify(p)
+    return jsonify({'error': 'Not found. Run /api/discover first.'}), 404
 
 
-@app.route('/api/refresh', methods=['POST'])
-def refresh():
-    global cache_loading
-    if cache_loading:
-        return jsonify({'message': 'Already loading.'}), 429
-    thread = threading.Thread(target=load_all_signals, daemon=True)
-    thread.start()
-    return jsonify({'message': 'Refresh started. Check /api/health for status.'})
+@app.route('/api/raw-signals')
+def get_raw_signals():
+    return jsonify(discovery_cache.get('raw_signals', {}))
 
 
-@app.route('/api/cache/status')
-def get_cache_status():
-    return jsonify({
-        'status': cache_status,
-        'loading': cache_loading,
-        'loaded': cache_loaded,
-        'predictions_cached': list(signal_cache.keys()),
-        'count': len(signal_cache),
-    })
-
-
-# Scanner routes
+# Scanner routes (keep these for manual exploration)
 @app.route('/api/scan/youtube')
 def scan_yt():
     q = request.args.get('q', '')
@@ -479,17 +484,17 @@ def get_analysis(cid):
 
 
 # ============================================================
-# AUTO-START: Load data in background on first request
+# AUTO-START on first visit
 # ============================================================
 _started = False
 
 
 @app.before_request
-def auto_load():
+def auto_start():
     global _started
-    if not _started and not cache_loading:
+    if not _started and not discovery_cache['loading']:
         _started = True
-        thread = threading.Thread(target=load_all_signals, daemon=True)
+        thread = threading.Thread(target=run_auto_discovery, daemon=True)
         thread.start()
 
 
