@@ -1,12 +1,14 @@
 """
 Popcorn AI — Real Data Collectors
-Pulls from: Google Trends, YouTube, Spotify, Wikipedia, 
+Pulls from: Google Trends, YouTube, Spotify, Wikipedia,
 TMDB, NewsAPI, AO3 Fan Fiction, Open Library
 """
 
 import os
 import json
 import time
+import re
+import base64
 import requests
 from datetime import datetime, timedelta
 
@@ -25,12 +27,14 @@ NEWS_API_KEY = os.environ.get('NEWS_API_KEY', '')
 _cache = {}
 CACHE_TTL = 86400  # 24 hours
 
+
 def get_cached(key):
     if key in _cache:
         entry = _cache[key]
         if time.time() - entry['time'] < CACHE_TTL:
             return entry['data']
     return None
+
 
 def set_cache(key, data):
     _cache[key] = {'data': data, 'time': time.time()}
@@ -40,18 +44,20 @@ def set_cache(key, data):
 # 1. GOOGLE TRENDS
 # ============================================================
 def get_google_trends(search_term, timeframe='today 12-m'):
-    """
-    Pull Google Trends data for a search term.
-    Returns monthly interest scores (0-100).
-    """
-    cache_key = f'gtrends_{search_term}_{timeframe}'
+    cache_key = 'gtrends_' + search_term + '_' + timeframe
     cached = get_cached(cache_key)
     if cached:
         return cached
 
     try:
         from pytrends.request import TrendReq
-        pytrends = TrendReq(hl='en-US', tz=360, timeout=(10, 25), retries=2, backoff_factor=1.0)
+        pytrends = TrendReq(
+            hl='en-US',
+            tz=360,
+            timeout=(10, 25),
+            retries=2,
+            backoff_factor=1.0
+        )
         pytrends.build_payload([search_term], cat=0, timeframe=timeframe)
         data = pytrends.interest_over_time()
 
@@ -70,7 +76,6 @@ def get_google_trends(search_term, timeframe='today 12-m'):
             month_key = date.strftime('%Y-%m')
             value = int(row[search_term])
             if month_key in result['data']:
-                # Average if multiple weeks in same month
                 result['data'][month_key] = round(
                     (result['data'][month_key] + value) / 2
                 )
@@ -90,13 +95,12 @@ def get_google_trends(search_term, timeframe='today 12-m'):
 
 
 def get_google_trends_batch(terms, timeframe='today 12-m'):
-    """Pull trends for multiple terms. Rate-limited."""
     results = []
     for i, term in enumerate(terms):
         result = get_google_trends(term, timeframe)
         results.append(result)
-       if i < len(terms) - 1:
-            time.sleep(5)  # Rate limit protection
+        if i < len(terms) - 1:
+            time.sleep(5)
     return results
 
 
@@ -104,8 +108,7 @@ def get_google_trends_batch(terms, timeframe='today 12-m'):
 # 2. YOUTUBE
 # ============================================================
 def search_youtube(query, max_results=10):
-    """Search YouTube and return video metadata."""
-    cache_key = f'yt_search_{query}'
+    cache_key = 'yt_search_' + query
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -154,11 +157,7 @@ def search_youtube(query, max_results=10):
 
 
 def get_youtube_trending_by_category(category_id='24'):
-    """
-    Get trending videos by category.
-    24 = Entertainment, 1 = Film, 10 = Music
-    """
-    cache_key = f'yt_trending_{category_id}'
+    cache_key = 'yt_trending_' + category_id
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -212,7 +211,6 @@ def get_youtube_trending_by_category(category_id='24'):
 # 3. SPOTIFY
 # ============================================================
 def get_spotify_token():
-    """Get Spotify API access token."""
     if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
         return None
 
@@ -222,13 +220,12 @@ def get_spotify_token():
         return cached
 
     try:
-        import base64
-        auth_str = f'{SPOTIFY_CLIENT_ID}:{SPOTIFY_CLIENT_SECRET}'
+        auth_str = SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET
         auth_b64 = base64.b64encode(auth_str.encode()).decode()
 
         resp = requests.post(
             'https://accounts.spotify.com/api/token',
-            headers={'Authorization': f'Basic {auth_b64}'},
+            headers={'Authorization': 'Basic ' + auth_b64},
             data={'grant_type': 'client_credentials'},
             timeout=10
         )
@@ -241,8 +238,7 @@ def get_spotify_token():
 
 
 def search_spotify_playlists(query, limit=10):
-    """Search for playlists related to a cultural signal."""
-    cache_key = f'spotify_pl_{query}'
+    cache_key = 'spotify_pl_' + query
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -254,7 +250,7 @@ def search_spotify_playlists(query, limit=10):
     try:
         resp = requests.get(
             'https://api.spotify.com/v1/search',
-            headers={'Authorization': f'Bearer {token}'},
+            headers={'Authorization': 'Bearer ' + token},
             params={'q': query, 'type': 'playlist', 'limit': limit, 'market': 'US'},
             timeout=10
         )
@@ -262,7 +258,6 @@ def search_spotify_playlists(query, limit=10):
         data = resp.json()
 
         playlists = []
-        total_followers = 0
         for item in data.get('playlists', {}).get('items', []):
             if item:
                 playlists.append({
@@ -288,8 +283,7 @@ def search_spotify_playlists(query, limit=10):
 
 
 def get_spotify_category_playlists(category='mood'):
-    """Get playlists from a Spotify browse category."""
-    cache_key = f'spotify_cat_{category}'
+    cache_key = 'spotify_cat_' + category
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -300,8 +294,8 @@ def get_spotify_category_playlists(category='mood'):
 
     try:
         resp = requests.get(
-            f'https://api.spotify.com/v1/browse/categories/{category}/playlists',
-            headers={'Authorization': f'Bearer {token}'},
+            'https://api.spotify.com/v1/browse/categories/' + category + '/playlists',
+            headers={'Authorization': 'Bearer ' + token},
             params={'limit': 20, 'country': 'US'},
             timeout=10
         )
@@ -336,8 +330,7 @@ def get_spotify_category_playlists(category='mood'):
 # 4. WIKIPEDIA PAGEVIEWS
 # ============================================================
 def get_wikipedia_pageviews(article, days=90):
-    """Get daily pageviews for a Wikipedia article."""
-    cache_key = f'wiki_{article}_{days}'
+    cache_key = 'wiki_' + article + '_' + str(days)
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -347,9 +340,9 @@ def get_wikipedia_pageviews(article, days=90):
         start_date = end_date - timedelta(days=days)
 
         url = (
-            f'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/'
-            f'en.wikipedia/all-access/all-agents/{article}/daily/'
-            f'{start_date.strftime("%Y%m%d")}/{end_date.strftime("%Y%m%d")}'
+            'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/'
+            'en.wikipedia/all-access/all-agents/' + article + '/daily/'
+            + start_date.strftime('%Y%m%d') + '/' + end_date.strftime('%Y%m%d')
         )
 
         resp = requests.get(url, headers={'User-Agent': 'PopcornAI/1.0'}, timeout=10)
@@ -371,7 +364,6 @@ def get_wikipedia_pageviews(article, days=90):
                 monthly_views[month_key] = 0
             monthly_views[month_key] += views
 
-        # Calculate trend
         months = sorted(monthly_views.keys())
         if len(months) >= 2:
             first_month = monthly_views[months[0]]
@@ -404,12 +396,11 @@ def get_wikipedia_pageviews(article, days=90):
 
 
 def get_wikipedia_batch(articles, days=90):
-    """Get pageviews for multiple articles."""
     results = []
     for article in articles:
         result = get_wikipedia_pageviews(article, days)
         results.append(result)
-        time.sleep(0.5)  # Rate limit
+        time.sleep(0.5)
     return results
 
 
@@ -417,8 +408,7 @@ def get_wikipedia_batch(articles, days=90):
 # 5. TMDB — Upcoming Movies & Shows
 # ============================================================
 def get_tmdb_upcoming_movies(page=1):
-    """Get upcoming movie releases."""
-    cache_key = f'tmdb_upcoming_{page}'
+    cache_key = 'tmdb_upcoming_' + str(page)
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -462,8 +452,7 @@ def get_tmdb_upcoming_movies(page=1):
 
 
 def get_tmdb_trending(media_type='all', time_window='week'):
-    """Get trending movies/shows."""
-    cache_key = f'tmdb_trending_{media_type}_{time_window}'
+    cache_key = 'tmdb_trending_' + media_type + '_' + time_window
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -473,7 +462,7 @@ def get_tmdb_trending(media_type='all', time_window='week'):
 
     try:
         resp = requests.get(
-            f'https://api.themoviedb.org/3/trending/{media_type}/{time_window}',
+            'https://api.themoviedb.org/3/trending/' + media_type + '/' + time_window,
             params={'api_key': TMDB_API_KEY},
             timeout=10
         )
@@ -509,8 +498,7 @@ def get_tmdb_trending(media_type='all', time_window='week'):
 
 
 def search_tmdb(query, media_type='multi'):
-    """Search TMDB for movies/shows."""
-    cache_key = f'tmdb_search_{query}_{media_type}'
+    cache_key = 'tmdb_search_' + query + '_' + media_type
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -520,7 +508,7 @@ def search_tmdb(query, media_type='multi'):
 
     try:
         resp = requests.get(
-            f'https://api.themoviedb.org/3/search/{media_type}',
+            'https://api.themoviedb.org/3/search/' + media_type,
             params={'api_key': TMDB_API_KEY, 'query': query},
             timeout=10
         )
@@ -556,8 +544,7 @@ def search_tmdb(query, media_type='multi'):
 # 6. NEWS API
 # ============================================================
 def search_news(query, days_back=30, page_size=10):
-    """Search recent news articles."""
-    cache_key = f'news_{query}_{days_back}'
+    cache_key = 'news_' + query + '_' + str(days_back)
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -610,7 +597,6 @@ def search_news(query, days_back=30, page_size=10):
 
 
 def get_entertainment_headlines():
-    """Get top entertainment headlines."""
     cache_key = 'news_entertainment_headlines'
     cached = get_cached(cache_key)
     if cached:
@@ -658,20 +644,16 @@ def get_entertainment_headlines():
 
 
 # ============================================================
-# 7. AO3 FAN FICTION (Archive of Our Own)
+# 7. AO3 FAN FICTION
 # ============================================================
 def get_ao3_tag_count(tag):
-    """
-    Get the number of works for a tag on AO3.
-    This is a proxy for fandom intensity and cultural interest.
-    """
-    cache_key = f'ao3_{tag}'
+    cache_key = 'ao3_' + tag
     cached = get_cached(cache_key)
     if cached:
         return cached
 
     try:
-        url = f'https://archiveofourown.org/tags/{tag.replace(" ", "%20")}/works'
+        url = 'https://archiveofourown.org/tags/' + tag.replace(' ', '%20') + '/works'
         resp = requests.get(
             url,
             headers={'User-Agent': 'PopcornAI/1.0 (audience research)'},
@@ -680,8 +662,6 @@ def get_ao3_tag_count(tag):
 
         if resp.status_code == 200:
             text = resp.text
-            # Extract work count from page
-            import re
             match = re.search(r'(\d[\d,]*)\s+Works?\s+found', text)
             if match:
                 count = int(match.group(1).replace(',', ''))
@@ -704,7 +684,7 @@ def get_ao3_tag_count(tag):
                 'tag': tag,
                 'source': 'AO3',
                 'work_count': 0,
-                'error': f'Status {resp.status_code}'
+                'error': 'Status ' + str(resp.status_code)
             }
 
         set_cache(cache_key, result)
@@ -715,21 +695,19 @@ def get_ao3_tag_count(tag):
 
 
 def get_ao3_batch(tags):
-    """Get work counts for multiple AO3 tags."""
     results = []
     for tag in tags:
         result = get_ao3_tag_count(tag)
         results.append(result)
-        time.sleep(2)  # Be respectful to AO3
+        time.sleep(2)
     return results
 
 
 # ============================================================
-# 8. OPEN LIBRARY (Book Trends)
+# 8. OPEN LIBRARY
 # ============================================================
 def search_open_library(query, limit=10):
-    """Search Open Library for books related to a cultural signal."""
-    cache_key = f'openlib_{query}'
+    cache_key = 'openlib_' + query
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -773,29 +751,22 @@ def search_open_library(query, limit=10):
 # MASTER: Collect All Signals for a Cultural Current
 # ============================================================
 def collect_signals_for_topic(topic_name, search_terms, wiki_articles, ao3_tags, news_queries):
-    """
-    Collect data from ALL sources for a single cultural topic.
-    Returns a comprehensive signal package.
-    """
     signals = {
         'topic': topic_name,
         'collected_at': datetime.utcnow().isoformat(),
         'sources': {},
     }
 
-    # Google Trends
     if search_terms:
         signals['sources']['google_trends'] = get_google_trends_batch(search_terms)
 
-    # YouTube
     if search_terms:
         yt_results = []
-        for term in search_terms[:3]:  # Limit to save quota
+        for term in search_terms[:3]:
             yt_results.append(search_youtube(term, max_results=5))
             time.sleep(1)
         signals['sources']['youtube'] = yt_results
 
-    # Spotify
     if search_terms:
         sp_results = []
         for term in search_terms[:3]:
@@ -803,11 +774,9 @@ def collect_signals_for_topic(topic_name, search_terms, wiki_articles, ao3_tags,
             time.sleep(1)
         signals['sources']['spotify'] = sp_results
 
-    # Wikipedia
     if wiki_articles:
         signals['sources']['wikipedia'] = get_wikipedia_batch(wiki_articles)
 
-    # News
     if news_queries:
         news_results = []
         for query in news_queries[:3]:
@@ -815,11 +784,9 @@ def collect_signals_for_topic(topic_name, search_terms, wiki_articles, ao3_tags,
             time.sleep(1)
         signals['sources']['news'] = news_results
 
-    # AO3
     if ao3_tags:
         signals['sources']['ao3'] = get_ao3_batch(ao3_tags)
 
-    # TMDB
     if search_terms:
         tmdb_results = []
         for term in search_terms[:2]:
