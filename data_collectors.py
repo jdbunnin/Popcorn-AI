@@ -1,8 +1,15 @@
 """
-Popcorn AI — Data Collectors v4
-Pulls from: Google Trends, YouTube, Spotify, Wikipedia,
-TMDB, NewsAPI, AO3, Open Library
-+ NEW: Auto-discovery via OpenAI GPT-4o
+Popcorn AI — Data Collectors v5
+UPGRADE: Rich engagement metrics from every source
+- YouTube: view counts, like counts, comment counts
+- Spotify: playlist follower estimates via track counts
+- Wikipedia: daily views with trend + absolute volume
+- News: article count + source credibility
+- AO3: work counts + fandom intensity
+- TMDB: popularity scores + vote counts
+- Books: edition counts + publication recency
+- Google Trends: monthly interest with velocity
++ GPT-4o integration for auto-discovery
 """
 
 import os
@@ -45,32 +52,7 @@ def set_cache(key, data):
 # ============================================================
 # OPENAI GPT-4o
 # ============================================================
-def ask_gpt(prompt, max_tokens=4000):
-    if not OPENAI_API_KEY:
-        return {'error': 'No OpenAI API key'}
-    try:
-        resp = requests.post(
-            'https://api.openai.com/v1/chat/completions',
-            headers={
-                'Authorization': 'Bearer ' + OPENAI_API_KEY,
-                'Content-Type': 'application/json',
-            },
-            json={
-                'model': 'gpt-4o',
-                'messages': [{'role': 'user', 'content': prompt}],
-                'max_tokens': max_tokens,
-                'temperature': 0.7,
-            },
-            timeout=60
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return {'text': data['choices'][0]['message']['content']}
-    except Exception as e:
-        return {'error': str(e)}
-
-
-def ask_gpt_json(prompt, max_tokens=4000):
+def ask_gpt_json(prompt, max_tokens=4096):
     if not OPENAI_API_KEY:
         return None
     try:
@@ -87,22 +69,516 @@ def ask_gpt_json(prompt, max_tokens=4000):
                 'temperature': 0.4,
                 'response_format': {'type': 'json_object'},
             },
-            timeout=60
+            timeout=90
         )
         resp.raise_for_status()
-        data = resp.json()
-        text = data['choices'][0]['message']['content']
+        text = resp.json()['choices'][0]['message']['content']
         return json.loads(text)
     except Exception as e:
-        print('[Popcorn] GPT JSON error: ' + str(e))
+        print('[Popcorn] GPT error: ' + str(e))
         return None
+
+
+# ============================================================
+# YOUTUBE — Now with VIEW COUNTS, LIKES, COMMENTS
+# ============================================================
+def search_youtube(query, max_results=10):
+    cache_key = 'yt5_' + query + '_' + str(max_results)
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not YOUTUBE_API_KEY:
+        return {'query': query, 'videos': [], 'error': 'No key', 'total_views': 0, 'total_likes': 0}
+
+    try:
+        # Step 1: Search for videos
+        resp = requests.get('https://www.googleapis.com/youtube/v3/search', params={
+            'part': 'snippet',
+            'q': query,
+            'type': 'video',
+            'order': 'relevance',
+            'maxResults': max_results,
+            'key': YOUTUBE_API_KEY,
+            'publishedAfter': (datetime.utcnow() - timedelta(days=180)).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        }, timeout=10)
+        resp.raise_for_status()
+        search_data = resp.json()
+
+        video_ids = []
+        snippets = {}
+        for item in search_data.get('items', []):
+            vid_id = item['id']['videoId']
+            video_ids.append(vid_id)
+            snippets[vid_id] = item['snippet']
+
+        if not video_ids:
+            result = {'query': query, 'source': 'YouTube', 'video_count': 0, 'videos': [], 'total_views': 0, 'total_likes': 0, 'total_comments': 0, 'collected_at': datetime.utcnow().isoformat()}
+            set_cache(cache_key, result)
+            return result
+
+        # Step 2: Get statistics for each video
+        stats_resp = requests.get('https://www.googleapis.com/youtube/v3/videos', params={
+            'part': 'statistics',
+            'id': ','.join(video_ids),
+            'key': YOUTUBE_API_KEY,
+        }, timeout=10)
+        stats_resp.raise_for_status()
+        stats_data = stats_resp.json()
+
+        stats_map = {}
+        for item in stats_data.get('items', []):
+            s = item.get('statistics', {})
+            stats_map[item['id']] = {
+                'views': int(s.get('viewCount', 0)),
+                'likes': int(s.get('likeCount', 0)),
+                'comments': int(s.get('commentCount', 0)),
+            }
+
+        # Step 3: Combine
+        videos = []
+        total_views = 0
+        total_likes = 0
+        total_comments = 0
+
+        for vid_id in video_ids:
+            snippet = snippets.get(vid_id, {})
+            stats = stats_map.get(vid_id, {'views': 0, 'likes': 0, 'comments': 0})
+
+            total_views += stats['views']
+            total_likes += stats['likes']
+            total_comments += stats['comments']
+
+            videos.append({
+                'title': snippet.get('title', ''),
+                'channel': snippet.get('channelTitle', ''),
+                'published': snippet.get('publishedAt', ''),
+                'description': snippet.get('description', '')[:200],
+                'views': stats['views'],
+                'likes': stats['likes'],
+                'comments': stats['comments'],
+                'views_formatted': format_number(stats['views']),
+                'likes_formatted': format_number(stats['likes']),
+            })
+
+        # Sort by views
+        videos.sort(key=lambda x: x['views'], reverse=True)
+
+        result = {
+            'query': query,
+            'source': 'YouTube',
+            'video_count': len(videos),
+            'videos': videos,
+            'total_views': total_views,
+            'total_likes': total_likes,
+            'total_comments': total_comments,
+            'total_views_formatted': format_number(total_views),
+            'total_likes_formatted': format_number(total_likes),
+            'avg_views': round(total_views / max(len(videos), 1)),
+            'avg_views_formatted': format_number(round(total_views / max(len(videos), 1))),
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+
+        set_cache(cache_key, result)
+        return result
+
+    except Exception as e:
+        return {'query': query, 'videos': [], 'error': str(e), 'total_views': 0, 'total_likes': 0}
+
+
+def get_youtube_trending_by_category(category_id='24'):
+    cache_key = 'yt5_trend_' + category_id
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not YOUTUBE_API_KEY:
+        return {'videos': [], 'error': 'No key'}
+    try:
+        resp = requests.get('https://www.googleapis.com/youtube/v3/videos', params={
+            'part': 'snippet,statistics',
+            'chart': 'mostPopular',
+            'regionCode': 'US',
+            'videoCategoryId': category_id,
+            'maxResults': 25,
+            'key': YOUTUBE_API_KEY,
+        }, timeout=10)
+        resp.raise_for_status()
+        videos = []
+        for item in resp.json().get('items', []):
+            s = item.get('statistics', {})
+            videos.append({
+                'title': item['snippet']['title'],
+                'channel': item['snippet']['channelTitle'],
+                'published': item['snippet']['publishedAt'],
+                'views': int(s.get('viewCount', 0)),
+                'likes': int(s.get('likeCount', 0)),
+                'comments': int(s.get('commentCount', 0)),
+                'views_formatted': format_number(int(s.get('viewCount', 0))),
+            })
+        result = {
+            'source': 'YouTube Trending',
+            'category': category_id,
+            'video_count': len(videos),
+            'videos': videos,
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'videos': [], 'error': str(e)}
+
+
+# ============================================================
+# SPOTIFY — With track counts and richer data
+# ============================================================
+def get_spotify_token():
+    if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
+        return None
+    cache_key = 'sp5_token'
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    try:
+        auth_b64 = base64.b64encode((SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).encode()).decode()
+        resp = requests.post('https://accounts.spotify.com/api/token',
+            headers={'Authorization': 'Basic ' + auth_b64},
+            data={'grant_type': 'client_credentials'}, timeout=10)
+        resp.raise_for_status()
+        token = resp.json()['access_token']
+        set_cache(cache_key, token)
+        return token
+    except Exception:
+        return None
+
+
+def search_spotify_playlists(query, limit=10):
+    cache_key = 'sp5_' + query + '_' + str(limit)
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    token = get_spotify_token()
+    if not token:
+        return {'query': query, 'playlists': [], 'error': 'No token', 'total_tracks': 0}
+    try:
+        resp = requests.get('https://api.spotify.com/v1/search',
+            headers={'Authorization': 'Bearer ' + token},
+            params={'q': query, 'type': 'playlist', 'limit': limit, 'market': 'US'}, timeout=10)
+        resp.raise_for_status()
+        playlists = []
+        total_tracks = 0
+        for item in resp.json().get('playlists', {}).get('items', []):
+            if item:
+                tracks = item.get('tracks', {}).get('total', 0)
+                total_tracks += tracks
+                playlists.append({
+                    'name': item.get('name', ''),
+                    'description': (item.get('description', '') or '')[:150],
+                    'tracks': tracks,
+                    'owner': item.get('owner', {}).get('display_name', ''),
+                    'tracks_formatted': format_number(tracks),
+                })
+        # Sort by tracks
+        playlists.sort(key=lambda x: x['tracks'], reverse=True)
+        result = {
+            'query': query,
+            'source': 'Spotify',
+            'playlist_count': len(playlists),
+            'playlists': playlists,
+            'total_tracks': total_tracks,
+            'total_tracks_formatted': format_number(total_tracks),
+            'avg_tracks': round(total_tracks / max(len(playlists), 1)),
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'query': query, 'playlists': [], 'error': str(e), 'total_tracks': 0}
+
+
+# ============================================================
+# WIKIPEDIA — Rich data with daily averages and trend
+# ============================================================
+def get_wikipedia_pageviews(article, days=90):
+    cache_key = 'wiki5_' + article + '_' + str(days)
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    try:
+        end = datetime.utcnow()
+        start = end - timedelta(days=days)
+        url = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/' + article + '/daily/' + start.strftime('%Y%m%d') + '/' + end.strftime('%Y%m%d')
+        resp = requests.get(url, headers={'User-Agent': 'PopcornAI/2.0'}, timeout=10)
+        resp.raise_for_status()
+        monthly = {}
+        total = 0
+        daily_max = 0
+        for item in resp.json().get('items', []):
+            views = item['views']
+            total += views
+            if views > daily_max:
+                daily_max = views
+            mk = item['timestamp'][:6]
+            monthly[mk] = monthly.get(mk, 0) + views
+        months = sorted(monthly.keys())
+        vel = 0
+        if len(months) >= 2:
+            vel = ((monthly[months[-1]] - monthly[months[0]]) / max(monthly[months[0]], 1)) * 100
+        daily_avg = round(total / max(days, 1))
+        result = {
+            'article': article,
+            'source': 'Wikipedia',
+            'total_views': total,
+            'total_views_formatted': format_number(total),
+            'daily_average': daily_avg,
+            'daily_average_formatted': format_number(daily_avg),
+            'daily_max': daily_max,
+            'daily_max_formatted': format_number(daily_max),
+            'monthly_views': monthly,
+            'velocity_pct': round(vel, 1),
+            'trend': 'rising' if vel > 10 else ('falling' if vel < -10 else 'stable'),
+            'article_clean': article.replace('_', ' '),
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'article': article, 'source': 'Wikipedia', 'total_views': 0, 'daily_average': 0, 'error': str(e)}
+
+
+def get_wikipedia_batch(articles, days=90):
+    results = []
+    for a in articles:
+        results.append(get_wikipedia_pageviews(a, days))
+        time.sleep(0.5)
+    return results
+
+
+# ============================================================
+# NEWS — With source names and dates
+# ============================================================
+def search_news(query, days_back=30, page_size=10):
+    cache_key = 'news5_' + query + '_' + str(days_back)
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not NEWS_API_KEY:
+        return {'query': query, 'articles': [], 'error': 'No key', 'total_results': 0}
+    try:
+        from_date = (datetime.utcnow() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+        resp = requests.get('https://newsapi.org/v2/everything', params={
+            'q': query, 'from': from_date, 'sortBy': 'relevancy',
+            'pageSize': page_size, 'language': 'en', 'apiKey': NEWS_API_KEY,
+        }, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        articles = []
+        sources_seen = set()
+        for a in data.get('articles', []):
+            source_name = a.get('source', {}).get('name', 'Unknown')
+            sources_seen.add(source_name)
+            pub_date = a.get('publishedAt', '')
+            if pub_date:
+                pub_date = pub_date[:10]
+            articles.append({
+                'title': a.get('title', ''),
+                'source': source_name,
+                'published': pub_date,
+                'description': (a.get('description', '') or '')[:200],
+                'url': a.get('url', ''),
+            })
+        result = {
+            'query': query,
+            'source': 'NewsAPI',
+            'total_results': data.get('totalResults', 0),
+            'total_results_formatted': format_number(data.get('totalResults', 0)),
+            'article_count': len(articles),
+            'unique_sources': len(sources_seen),
+            'source_names': list(sources_seen)[:10],
+            'articles': articles,
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'query': query, 'articles': [], 'error': str(e), 'total_results': 0}
+
+
+def get_entertainment_headlines():
+    cache_key = 'news5_hl'
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not NEWS_API_KEY:
+        return {'articles': [], 'error': 'No key'}
+    try:
+        resp = requests.get('https://newsapi.org/v2/top-headlines', params={
+            'category': 'entertainment', 'country': 'us', 'pageSize': 20, 'apiKey': NEWS_API_KEY,
+        }, timeout=10)
+        resp.raise_for_status()
+        articles = [{'title': a.get('title', ''), 'source': a.get('source', {}).get('name', ''), 'published': (a.get('publishedAt', '') or '')[:10]} for a in resp.json().get('articles', [])]
+        result = {'source': 'NewsAPI Headlines', 'articles': articles, 'collected_at': datetime.utcnow().isoformat()}
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'articles': [], 'error': str(e)}
+
+
+# ============================================================
+# AO3 — Fan fiction with work counts
+# ============================================================
+def get_ao3_tag_count(tag):
+    cache_key = 'ao35_' + tag
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    try:
+        url = 'https://archiveofourown.org/tags/' + tag.replace(' ', '%20') + '/works'
+        resp = requests.get(url, headers={'User-Agent': 'PopcornAI/2.0'}, timeout=15)
+        count = 0
+        if resp.status_code == 200:
+            match = re.search(r'(\d[\d,]*)\s+Works?\s+found', resp.text)
+            if match:
+                count = int(match.group(1).replace(',', ''))
+            else:
+                match = re.search(r'of\s+(\d[\d,]*)\s+Works', resp.text)
+                if match:
+                    count = int(match.group(1).replace(',', ''))
+        result = {
+            'tag': tag,
+            'source': 'AO3',
+            'work_count': count,
+            'work_count_formatted': format_number(count),
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'tag': tag, 'source': 'AO3', 'work_count': 0, 'error': str(e)}
+
+
+def get_ao3_batch(tags):
+    results = []
+    for tag in tags:
+        results.append(get_ao3_tag_count(tag))
+        time.sleep(2)
+    return results
+
+
+# ============================================================
+# TMDB — With popularity and vote data
+# ============================================================
+def get_tmdb_upcoming_movies():
+    cache_key = 'tmdb5_up'
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not TMDB_API_KEY:
+        return {'movies': [], 'error': 'No key'}
+    try:
+        resp = requests.get('https://api.themoviedb.org/3/movie/upcoming', params={'api_key': TMDB_API_KEY, 'region': 'US'}, timeout=10)
+        resp.raise_for_status()
+        movies = [{
+            'title': m['title'],
+            'release_date': m.get('release_date', ''),
+            'overview': m.get('overview', '')[:200],
+            'popularity': round(m.get('popularity', 0), 1),
+            'vote_average': m.get('vote_average', 0),
+            'vote_count': m.get('vote_count', 0),
+        } for m in resp.json().get('results', [])]
+        result = {'source': 'TMDB', 'count': len(movies), 'movies': movies, 'collected_at': datetime.utcnow().isoformat()}
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'movies': [], 'error': str(e)}
+
+
+def get_tmdb_trending(media_type='all', window='week'):
+    cache_key = 'tmdb5_tr_' + media_type + '_' + window
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not TMDB_API_KEY:
+        return {'results': [], 'error': 'No key'}
+    try:
+        resp = requests.get('https://api.themoviedb.org/3/trending/' + media_type + '/' + window, params={'api_key': TMDB_API_KEY}, timeout=10)
+        resp.raise_for_status()
+        items = [{
+            'title': i.get('title') or i.get('name', ''),
+            'media_type': i.get('media_type', ''),
+            'overview': i.get('overview', '')[:200],
+            'popularity': round(i.get('popularity', 0), 1),
+            'vote_average': i.get('vote_average', 0),
+            'vote_count': i.get('vote_count', 0),
+        } for i in resp.json().get('results', [])[:25]]
+        result = {'source': 'TMDB Trending', 'count': len(items), 'results': items, 'collected_at': datetime.utcnow().isoformat()}
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'results': [], 'error': str(e)}
+
+
+def search_tmdb(query):
+    cache_key = 'tmdb5_s_' + query
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    if not TMDB_API_KEY:
+        return {'results': [], 'error': 'No key', 'count': 0}
+    try:
+        resp = requests.get('https://api.themoviedb.org/3/search/multi', params={'api_key': TMDB_API_KEY, 'query': query}, timeout=10)
+        resp.raise_for_status()
+        items = [{
+            'title': i.get('title') or i.get('name', ''),
+            'overview': i.get('overview', '')[:200],
+            'popularity': round(i.get('popularity', 0), 1),
+            'vote_average': i.get('vote_average', 0),
+            'vote_count': i.get('vote_count', 0),
+            'media_type': i.get('media_type', ''),
+        } for i in resp.json().get('results', [])[:10]]
+        result = {'source': 'TMDB', 'query': query, 'count': len(items), 'results': items, 'collected_at': datetime.utcnow().isoformat()}
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'results': [], 'error': str(e), 'count': 0}
+
+
+# ============================================================
+# OPEN LIBRARY — With edition counts
+# ============================================================
+def search_open_library(query, limit=10):
+    cache_key = 'olib5_' + query
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    try:
+        resp = requests.get('https://openlibrary.org/search.json', params={'q': query, 'limit': limit, 'sort': 'new'}, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        books = [{
+            'title': d.get('title', ''),
+            'author': d.get('author_name', ['Unknown'])[0] if d.get('author_name') else 'Unknown',
+            'year': d.get('first_publish_year', ''),
+            'editions': d.get('edition_count', 0),
+            'languages': len(d.get('language', [])),
+        } for d in data.get('docs', [])]
+        result = {
+            'query': query,
+            'source': 'Open Library',
+            'total_found': data.get('numFound', 0),
+            'total_found_formatted': format_number(data.get('numFound', 0)),
+            'books': books,
+            'collected_at': datetime.utcnow().isoformat(),
+        }
+        set_cache(cache_key, result)
+        return result
+    except Exception as e:
+        return {'query': query, 'books': [], 'error': str(e), 'total_found': 0}
 
 
 # ============================================================
 # GOOGLE TRENDS
 # ============================================================
 def get_google_trends(search_term, timeframe='today 12-m'):
-    cache_key = 'gtrends_' + search_term + '_' + timeframe
+    cache_key = 'gt5_' + search_term + '_' + timeframe
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -124,7 +600,7 @@ def get_google_trends(search_term, timeframe='today 12-m'):
         set_cache(cache_key, result)
         return result
     except Exception as e:
-        return {'term': search_term, 'source': 'Google Trends', 'data': {}, 'error': str(e)}
+        return {'term': search_term, 'data': {}, 'error': str(e)}
 
 
 def get_google_trends_batch(terms, timeframe='today 12-m'):
@@ -137,340 +613,43 @@ def get_google_trends_batch(terms, timeframe='today 12-m'):
 
 
 # ============================================================
-# YOUTUBE
+# NUMBER FORMATTING
 # ============================================================
-def search_youtube(query, max_results=10):
-    cache_key = 'yt_' + query + '_' + str(max_results)
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not YOUTUBE_API_KEY:
-        return {'query': query, 'videos': [], 'error': 'No key'}
-    try:
-        resp = requests.get('https://www.googleapis.com/youtube/v3/search', params={
-            'part': 'snippet', 'q': query, 'type': 'video', 'order': 'relevance',
-            'maxResults': max_results, 'key': YOUTUBE_API_KEY,
-            'publishedAfter': (datetime.utcnow() - timedelta(days=180)).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        }, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        videos = []
-        for item in data.get('items', []):
-            videos.append({
-                'title': item['snippet']['title'],
-                'channel': item['snippet']['channelTitle'],
-                'published': item['snippet']['publishedAt'],
-                'description': item['snippet']['description'][:200],
-            })
-        result = {'query': query, 'source': 'YouTube', 'video_count': len(videos), 'videos': videos, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'query': query, 'videos': [], 'error': str(e)}
-
-
-def get_youtube_trending_by_category(category_id='24'):
-    cache_key = 'yt_trend_' + category_id
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not YOUTUBE_API_KEY:
-        return {'videos': [], 'error': 'No key'}
-    try:
-        resp = requests.get('https://www.googleapis.com/youtube/v3/videos', params={
-            'part': 'snippet,statistics', 'chart': 'mostPopular', 'regionCode': 'US',
-            'videoCategoryId': category_id, 'maxResults': 25, 'key': YOUTUBE_API_KEY,
-        }, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        videos = []
-        for item in data.get('items', []):
-            stats = item.get('statistics', {})
-            videos.append({
-                'title': item['snippet']['title'],
-                'channel': item['snippet']['channelTitle'],
-                'views': int(stats.get('viewCount', 0)),
-                'likes': int(stats.get('likeCount', 0)),
-                'published': item['snippet']['publishedAt'],
-            })
-        result = {'source': 'YouTube Trending', 'category': category_id, 'video_count': len(videos), 'videos': videos, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'videos': [], 'error': str(e)}
+def format_number(n):
+    if n is None:
+        return '0'
+    n = int(n)
+    if n >= 1000000000:
+        return str(round(n / 1000000000, 1)) + 'B'
+    if n >= 1000000:
+        return str(round(n / 1000000, 1)) + 'M'
+    if n >= 1000:
+        return str(round(n / 1000, 1)) + 'K'
+    return str(n)
 
 
 # ============================================================
-# SPOTIFY
-# ============================================================
-def get_spotify_token():
-    if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
-        return None
-    cache_key = 'sp_token'
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    try:
-        auth_b64 = base64.b64encode((SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).encode()).decode()
-        resp = requests.post('https://accounts.spotify.com/api/token',
-            headers={'Authorization': 'Basic ' + auth_b64},
-            data={'grant_type': 'client_credentials'}, timeout=10)
-        resp.raise_for_status()
-        token = resp.json()['access_token']
-        set_cache(cache_key, token)
-        return token
-    except Exception:
-        return None
-
-
-def search_spotify_playlists(query, limit=10):
-    cache_key = 'sp_pl_' + query
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    token = get_spotify_token()
-    if not token:
-        return {'query': query, 'playlists': [], 'error': 'No token'}
-    try:
-        resp = requests.get('https://api.spotify.com/v1/search',
-            headers={'Authorization': 'Bearer ' + token},
-            params={'q': query, 'type': 'playlist', 'limit': limit, 'market': 'US'}, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        playlists = []
-        for item in data.get('playlists', {}).get('items', []):
-            if item:
-                playlists.append({
-                    'name': item.get('name', ''),
-                    'description': (item.get('description', '') or '')[:150],
-                    'tracks': item.get('tracks', {}).get('total', 0),
-                })
-        result = {'query': query, 'source': 'Spotify', 'playlist_count': len(playlists), 'playlists': playlists, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'query': query, 'playlists': [], 'error': str(e)}
-
-
-# ============================================================
-# WIKIPEDIA
-# ============================================================
-def get_wikipedia_pageviews(article, days=90):
-    cache_key = 'wiki_' + article + '_' + str(days)
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    try:
-        end = datetime.utcnow()
-        start = end - timedelta(days=days)
-        url = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/' + article + '/daily/' + start.strftime('%Y%m%d') + '/' + end.strftime('%Y%m%d')
-        resp = requests.get(url, headers={'User-Agent': 'PopcornAI/1.0'}, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        monthly = {}
-        total = 0
-        for item in data.get('items', []):
-            views = item['views']
-            total += views
-            mk = item['timestamp'][:6]
-            monthly[mk] = monthly.get(mk, 0) + views
-        months = sorted(monthly.keys())
-        vel = 0
-        if len(months) >= 2:
-            vel = ((monthly[months[-1]] - monthly[months[0]]) / max(monthly[months[0]], 1)) * 100
-        result = {
-            'article': article, 'source': 'Wikipedia', 'total_views': total,
-            'daily_average': round(total / max(days, 1)), 'monthly_views': monthly,
-            'velocity_pct': round(vel, 1),
-            'trend': 'rising' if vel > 10 else ('falling' if vel < -10 else 'stable'),
-            'collected_at': datetime.utcnow().isoformat()
-        }
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'article': article, 'source': 'Wikipedia', 'total_views': 0, 'error': str(e)}
-
-
-def get_wikipedia_batch(articles, days=90):
-    results = []
-    for a in articles:
-        results.append(get_wikipedia_pageviews(a, days))
-        time.sleep(0.5)
-    return results
-
-
-# ============================================================
-# TMDB
-# ============================================================
-def get_tmdb_upcoming_movies():
-    cache_key = 'tmdb_up'
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not TMDB_API_KEY:
-        return {'movies': [], 'error': 'No key'}
-    try:
-        resp = requests.get('https://api.themoviedb.org/3/movie/upcoming', params={'api_key': TMDB_API_KEY, 'region': 'US'}, timeout=10)
-        resp.raise_for_status()
-        movies = [{'title': m['title'], 'release_date': m.get('release_date', ''), 'overview': m.get('overview', '')[:200], 'popularity': m.get('popularity', 0)} for m in resp.json().get('results', [])]
-        result = {'source': 'TMDB', 'count': len(movies), 'movies': movies, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'movies': [], 'error': str(e)}
-
-
-def get_tmdb_trending(media_type='all', window='week'):
-    cache_key = 'tmdb_tr_' + media_type + '_' + window
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not TMDB_API_KEY:
-        return {'results': [], 'error': 'No key'}
-    try:
-        resp = requests.get('https://api.themoviedb.org/3/trending/' + media_type + '/' + window, params={'api_key': TMDB_API_KEY}, timeout=10)
-        resp.raise_for_status()
-        items = [{'title': i.get('title') or i.get('name', ''), 'media_type': i.get('media_type', ''), 'overview': i.get('overview', '')[:200], 'popularity': i.get('popularity', 0)} for i in resp.json().get('results', [])[:25]]
-        result = {'source': 'TMDB Trending', 'count': len(items), 'results': items, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'results': [], 'error': str(e)}
-
-
-def search_tmdb(query):
-    cache_key = 'tmdb_s_' + query
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not TMDB_API_KEY:
-        return {'results': [], 'error': 'No key'}
-    try:
-        resp = requests.get('https://api.themoviedb.org/3/search/multi', params={'api_key': TMDB_API_KEY, 'query': query}, timeout=10)
-        resp.raise_for_status()
-        items = [{'title': i.get('title') or i.get('name', ''), 'overview': i.get('overview', '')[:200], 'popularity': i.get('popularity', 0)} for i in resp.json().get('results', [])[:10]]
-        result = {'source': 'TMDB', 'query': query, 'count': len(items), 'results': items, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'results': [], 'error': str(e)}
-
-
-# ============================================================
-# NEWS
-# ============================================================
-def search_news(query, days_back=30, page_size=10):
-    cache_key = 'news_' + query + '_' + str(days_back)
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not NEWS_API_KEY:
-        return {'query': query, 'articles': [], 'error': 'No key'}
-    try:
-        from_date = (datetime.utcnow() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-        resp = requests.get('https://newsapi.org/v2/everything', params={
-            'q': query, 'from': from_date, 'sortBy': 'relevancy',
-            'pageSize': page_size, 'language': 'en', 'apiKey': NEWS_API_KEY,
-        }, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        articles = [{'title': a.get('title', ''), 'source': a.get('source', {}).get('name', ''), 'published': a.get('publishedAt', ''), 'description': (a.get('description', '') or '')[:200], 'url': a.get('url', '')} for a in data.get('articles', [])]
-        result = {'query': query, 'source': 'NewsAPI', 'total_results': data.get('totalResults', 0), 'article_count': len(articles), 'articles': articles, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'query': query, 'articles': [], 'error': str(e)}
-
-
-def get_entertainment_headlines():
-    cache_key = 'news_hl'
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    if not NEWS_API_KEY:
-        return {'articles': [], 'error': 'No key'}
-    try:
-        resp = requests.get('https://newsapi.org/v2/top-headlines', params={
-            'category': 'entertainment', 'country': 'us', 'pageSize': 20, 'apiKey': NEWS_API_KEY,
-        }, timeout=10)
-        resp.raise_for_status()
-        articles = [{'title': a.get('title', ''), 'source': a.get('source', {}).get('name', ''), 'published': a.get('publishedAt', '')} for a in resp.json().get('articles', [])]
-        result = {'source': 'NewsAPI Headlines', 'articles': articles, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'articles': [], 'error': str(e)}
-
-
-# ============================================================
-# AO3
-# ============================================================
-def get_ao3_tag_count(tag):
-    cache_key = 'ao3_' + tag
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    try:
-        url = 'https://archiveofourown.org/tags/' + tag.replace(' ', '%20') + '/works'
-        resp = requests.get(url, headers={'User-Agent': 'PopcornAI/1.0'}, timeout=15)
-        count = 0
-        if resp.status_code == 200:
-            match = re.search(r'(\d[\d,]*)\s+Works?\s+found', resp.text)
-            if match:
-                count = int(match.group(1).replace(',', ''))
-            else:
-                match = re.search(r'of\s+(\d[\d,]*)\s+Works', resp.text)
-                if match:
-                    count = int(match.group(1).replace(',', ''))
-        result = {'tag': tag, 'source': 'AO3', 'work_count': count, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'tag': tag, 'source': 'AO3', 'work_count': 0, 'error': str(e)}
-
-
-def get_ao3_batch(tags):
-    results = []
-    for tag in tags:
-        results.append(get_ao3_tag_count(tag))
-        time.sleep(2)
-    return results
-
-
-# ============================================================
-# OPEN LIBRARY
-# ============================================================
-def search_open_library(query, limit=10):
-    cache_key = 'olib_' + query
-    cached = get_cached(cache_key)
-    if cached:
-        return cached
-    try:
-        resp = requests.get('https://openlibrary.org/search.json', params={'q': query, 'limit': limit, 'sort': 'new'}, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        books = [{'title': d.get('title', ''), 'author': d.get('author_name', ['Unknown'])[0] if d.get('author_name') else 'Unknown', 'year': d.get('first_publish_year', '')} for d in data.get('docs', [])]
-        result = {'query': query, 'source': 'Open Library', 'total_found': data.get('numFound', 0), 'books': books, 'collected_at': datetime.utcnow().isoformat()}
-        set_cache(cache_key, result)
-        return result
-    except Exception as e:
-        return {'query': query, 'books': [], 'error': str(e)}
-
-
-# ============================================================
-# HARVEST ALL SIGNALS (for auto-discovery)
+# HARVEST ALL SIGNALS
 # ============================================================
 def harvest_all_signals():
     print('[Popcorn] Harvesting signals from all sources...')
     signals = {}
 
-    # YouTube trending entertainment
+    # YouTube trending
     try:
         yt_ent = get_youtube_trending_by_category('24')
         yt_music = get_youtube_trending_by_category('10')
         signals['youtube_trending'] = {
-            'entertainment': [v['title'] for v in yt_ent.get('videos', [])[:25]],
-            'music': [v['title'] for v in yt_music.get('videos', [])[:15]],
+            'entertainment': [{
+                'title': v['title'],
+                'channel': v['channel'],
+                'views': v.get('views_formatted', ''),
+                'likes': v.get('likes', 0),
+            } for v in yt_ent.get('videos', [])[:20]],
+            'music': [{
+                'title': v['title'],
+                'views': v.get('views_formatted', ''),
+            } for v in yt_music.get('videos', [])[:10]],
         }
         print('[Popcorn]   YouTube trending: OK')
     except Exception as e:
@@ -478,19 +657,19 @@ def harvest_all_signals():
         signals['youtube_trending'] = {}
     time.sleep(1)
 
-    # YouTube searches for cultural signals
+    # YouTube cultural searches
     try:
-        cultural_searches = [
-            'why is everyone talking about',
-            'trend 2025',
-            'cultural moment',
-            'viral right now',
-            'everyone is watching',
-        ]
+        searches = ['why is everyone talking about', 'cultural trend 2025', 'viral right now', 'everyone is watching', 'most talked about', 'cultural moment 2025', 'what to watch 2025']
         yt_cultural = []
-        for q in cultural_searches:
+        for q in searches:
             result = search_youtube(q, max_results=5)
-            yt_cultural.extend([v['title'] for v in result.get('videos', [])])
+            for v in result.get('videos', []):
+                yt_cultural.append({
+                    'title': v['title'],
+                    'channel': v['channel'],
+                    'views': v.get('views_formatted', ''),
+                    'likes': v.get('likes_formatted', ''),
+                })
             time.sleep(1)
         signals['youtube_cultural'] = yt_cultural
         print('[Popcorn]   YouTube cultural: OK (' + str(len(yt_cultural)) + ' videos)')
@@ -498,38 +677,44 @@ def harvest_all_signals():
         print('[Popcorn]   YouTube cultural: FAIL - ' + str(e))
         signals['youtube_cultural'] = []
 
-    # Spotify trending
+    # Spotify mood trends
     try:
-        mood_searches = ['trending 2025', 'viral hits', 'feel good', 'sad vibes', 'anger', 'nostalgia', 'healing', 'empowerment', 'chill anxiety']
-        sp_playlists = []
-        for q in mood_searches:
+        moods = ['trending 2025', 'viral hits', 'feel good', 'sad vibes', 'anger playlist', 'nostalgia', 'healing', 'empowerment', 'anxiety relief', 'comfort', 'dark academia', 'cottagecore']
+        sp_data = []
+        for q in moods:
             result = search_spotify_playlists(q, limit=5)
             for pl in result.get('playlists', []):
-                sp_playlists.append(pl['name'] + ': ' + pl.get('description', '')[:80])
-            time.sleep(1)
-        signals['spotify_moods'] = sp_playlists
-        print('[Popcorn]   Spotify moods: OK (' + str(len(sp_playlists)) + ' playlists)')
+                sp_data.append({
+                    'name': pl['name'],
+                    'tracks': pl['tracks'],
+                    'description': pl.get('description', '')[:80],
+                })
+            time.sleep(0.5)
+        signals['spotify_moods'] = sp_data
+        print('[Popcorn]   Spotify: OK (' + str(len(sp_data)) + ' playlists)')
     except Exception as e:
         print('[Popcorn]   Spotify: FAIL - ' + str(e))
         signals['spotify_moods'] = []
 
-    # Wikipedia trending cultural articles
+    # Wikipedia cultural articles
     try:
-        wiki_articles = [
+        wiki_topics = [
             'Loneliness', 'Nostalgia', 'Mental_health', 'Masculinity',
             'Working_class', 'Spirituality', 'Artificial_intelligence',
-            'Digital_detox', 'Community_building', 'Found_family',
-            'Burnout_(psychology)', 'Minimalism', 'Cottagecore',
-            'True_crime', 'K-pop', 'Anime', 'Streaming_media',
-            'Psychedelic_therapy', 'Meditation', 'Income_inequality',
+            'Digital_detox', 'Community_building', 'Burnout_(psychology)',
+            'True_crime', 'K-pop', 'Anime', 'Psychedelic_therapy',
+            'Meditation', 'Income_inequality', 'Found_family',
+            'Cottagecore', 'Dark_academia', 'Quiet_quitting',
         ]
         wiki_data = []
-        for a in wiki_articles:
+        for a in wiki_topics:
             result = get_wikipedia_pageviews(a, 90)
             if not result.get('error'):
                 wiki_data.append({
                     'topic': a.replace('_', ' '),
                     'daily_views': result.get('daily_average', 0),
+                    'daily_views_formatted': result.get('daily_average_formatted', '0'),
+                    'total_views_formatted': result.get('total_views_formatted', '0'),
                     'trend': result.get('trend', 'stable'),
                     'velocity': result.get('velocity_pct', 0),
                 })
@@ -540,44 +725,48 @@ def harvest_all_signals():
         print('[Popcorn]   Wikipedia: FAIL - ' + str(e))
         signals['wikipedia_cultural'] = []
 
-    # News headlines and trending entertainment
+    # News
     try:
         headlines = get_entertainment_headlines()
-        signals['news_headlines'] = [a['title'] for a in headlines.get('articles', [])[:20]]
-        print('[Popcorn]   News headlines: OK')
+        signals['news_headlines'] = [a['title'] + ' (' + a.get('source', '') + ')' for a in headlines.get('articles', [])[:20]]
+        print('[Popcorn]   Headlines: OK')
     except Exception as e:
-        print('[Popcorn]   News headlines: FAIL - ' + str(e))
+        print('[Popcorn]   Headlines: FAIL - ' + str(e))
         signals['news_headlines'] = []
     time.sleep(1)
 
     try:
-        cultural_news_queries = ['cultural trend 2025', 'audience demand entertainment', 'what audiences want', 'streaming trends', 'gen z culture']
-        news_articles = []
-        for q in cultural_news_queries:
+        news_queries = ['cultural trend 2025', 'audience demand entertainment', 'streaming trends', 'gen z culture', 'what audiences want', 'entertainment industry shift', 'viral content trend']
+        news_data = []
+        for q in news_queries:
             result = search_news(q, days_back=30, page_size=5)
             for a in result.get('articles', []):
-                news_articles.append(a['title'] + ' — ' + (a.get('description', '') or '')[:100])
-            time.sleep(1)
-        signals['news_cultural'] = news_articles
-        print('[Popcorn]   News cultural: OK (' + str(len(news_articles)) + ' articles)')
+                news_data.append(a['title'] + ' — ' + a.get('source', '') + ' (' + a.get('published', '') + ')')
+            time.sleep(0.5)
+        signals['news_cultural'] = news_data
+        print('[Popcorn]   News cultural: OK (' + str(len(news_data)) + ' articles)')
     except Exception as e:
         print('[Popcorn]   News cultural: FAIL - ' + str(e))
         signals['news_cultural'] = []
 
-    # AO3 fan fiction trending tags
+    # AO3
     try:
         ao3_tags = [
             'Found Family', 'Hurt/Comfort', 'Enemies to Lovers',
-            'Slow Burn', 'Angst', 'Fluff', 'Domestic',
+            'Slow Burn', 'Angst', 'Domestic Fluff',
             'Mental Health', 'Healing', 'Chosen Family',
-            'Working Class', 'Blue Collar', 'Cottagecore',
-            'Solarpunk', 'Hopepunk',
+            'Working Class', 'Cottagecore', 'Solarpunk', 'Hopepunk',
+            'Queer Themes', 'Identity',
         ]
         ao3_data = []
         for tag in ao3_tags:
             result = get_ao3_tag_count(tag)
             if not result.get('error'):
-                ao3_data.append({'tag': tag, 'works': result.get('work_count', 0)})
+                ao3_data.append({
+                    'tag': tag,
+                    'works': result.get('work_count', 0),
+                    'works_formatted': result.get('work_count_formatted', '0'),
+                })
             time.sleep(2)
         signals['ao3_tags'] = ao3_data
         print('[Popcorn]   AO3: OK (' + str(len(ao3_data)) + ' tags)')
@@ -585,11 +774,16 @@ def harvest_all_signals():
         print('[Popcorn]   AO3: FAIL - ' + str(e))
         signals['ao3_tags'] = []
 
-    # TMDB trending and upcoming
+    # TMDB
     try:
         trending = get_tmdb_trending('all', 'week')
         upcoming = get_tmdb_upcoming_movies()
-        signals['tmdb_trending'] = [i['title'] + ': ' + i.get('overview', '')[:100] for i in trending.get('results', [])[:20]]
+        signals['tmdb_trending'] = [{
+            'title': i['title'],
+            'popularity': i.get('popularity', 0),
+            'votes': i.get('vote_count', 0),
+            'overview': i.get('overview', '')[:100],
+        } for i in trending.get('results', [])[:20]]
         signals['tmdb_upcoming'] = [m['title'] + ' (' + m.get('release_date', '') + ')' for m in upcoming.get('movies', [])[:15]]
         print('[Popcorn]   TMDB: OK')
     except Exception as e:
