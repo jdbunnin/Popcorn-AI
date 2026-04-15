@@ -1,10 +1,10 @@
 """
-Popcorn AI v5.0 — Sharp Predictions + Real Numbers
-- Aggressive scoring that reflects reality
-- GPT prompt demands OBVIOUS massive cultural movements
-- Forces 6-8 predictions
-- Shows actual view counts and engagement metrics
-- Convergence counts every source that returns data
+Popcorn AI v5.1 — RAZOR SHARP
+- No overlapping predictions
+- Specific content pitches, not vague trends
+- Targeted search terms that real people use
+- GPT filters irrelevant results
+- Every prediction is a greenlight-ready pitch
 """
 
 from flask import Flask, jsonify, send_from_directory, request
@@ -51,90 +51,150 @@ cache = {
 }
 
 # ============================================================
-# THE PROMPT — Demands MASSIVE obvious cultural movements
+# THE PROMPT — RAZOR SHARP
 # ============================================================
-PROMPT = """You are Popcorn AI. You analyze raw cultural signals and identify the BIGGEST, most OBVIOUS audience demand movements happening right now.
+PROMPT = """You are Popcorn AI — the sharpest audience demand intelligence system in entertainment.
 
-CRITICAL RULES — READ CAREFULLY:
+You are analyzing real-time signals from YouTube, Spotify, Wikipedia, News, TMDB, AO3 fan fiction, and Books.
 
-1. ONLY identify MASSIVE cultural movements that affect MILLIONS of people. Not niche subcultures. Not obscure genres. MAINSTREAM demand.
-   BAD: "Post-apocalyptic hopepunk" (too niche, too specific)
-   BAD: "Solarpunk aesthetics in media" (nobody searches this)
-   GOOD: "Men's mental health crisis — 40M American men are searching for emotional permission"
-   GOOD: "The loneliness epidemic — Americans are desperate for stories about human connection"
-   GOOD: "Working class pride — 100M blue-collar Americans have zero representation in prestige TV"
+Your job: identify SPECIFIC unserved entertainment opportunities that a studio could greenlight TOMORROW.
 
-2. Every prediction must be something a NORMAL PERSON would recognize and say "yes, I feel that."
-   Test: Would your mom understand this cultural current? If not, it's too niche.
+═══════════════════════════════════════════
+ABSOLUTE RULES — VIOLATING THESE IS FAILURE
+═══════════════════════════════════════════
 
-3. Be SPECIFIC about the content opportunity but BROAD about the cultural movement.
-   The MOVEMENT is broad: "Americans are lonely and craving connection stories"
-   The CONTENT is specific: "An 8-episode ensemble dramedy about strangers who form a community through a shared crisis, in the tone of Ted Lasso meets Friday Night Lights"
+RULE 1: NO OVERLAPPING PREDICTIONS
+  Every prediction must be about a DIFFERENT cultural demand.
+  "Men's mental health" and "mental health awareness" are the SAME thing.
+  "Nostalgia" and "90s revival" are the SAME thing.
+  If two ideas overlap by more than 30%, MERGE THEM into one stronger prediction.
+  I want 7 DISTINCT cultural currents, not 7 variations of 3 ideas.
 
-4. Generate EXACTLY 7 cultural currents. Not 4. Not 5. SEVEN.
+RULE 2: PREDICTIONS MUST BE SURPRISING, NOT OBVIOUS
+  BAD: "People are lonely" (everyone knows this)
+  BAD: "Nostalgia is popular" (everyone knows this)
+  BAD: "Mental health matters" (everyone knows this)
+  
+  GOOD: "35-year-old men who grew up on Jackass and Entourage are now experiencing emotional awakenings through fatherhood — and there is ZERO prestige content depicting modern fatherhood through the lens of reformed bro culture. The audience is 18M men who would never watch 'This Is Us' but would absolutely watch a show about a former party guy learning to be vulnerable as a dad, in the tone of Scrubs meets Knocked Up meets The Bear."
+  
+  GOOD: "Small-town Americans (population 5K-50K) are 60% of the country but 0% of prestige TV. Every show is set in NYC, LA, or a fictional big city. There's a massive unserved audience of 120M people who want to see THEIR lives — not rural poverty porn (Ozark) but authentic, funny, complicated small-town life with the production quality of The Bear."
+  
+  GOOD: "The immigrant experience in America has generated $2B+ in box office (Coco, Everything Everywhere, Encanto) but there is NO prestige drama series that depicts the mundane daily reality of first-generation immigrant families — the funny, awkward, heartbreaking navigation between two cultures. Not trauma porn. Not inspiration porn. Just LIFE. 40M first-gen Americans are waiting for this show."
+  
+  See the difference? These are SPECIFIC, SURPRISING, and immediately actionable.
 
-5. Rank them by how LARGE the affected audience is. #1 should affect the most people.
+RULE 3: EVERY PREDICTION MUST INCLUDE A COMPLETE PITCH
+  The "content_opportunity" field must be SO SPECIFIC that a showrunner could write a pilot from it.
+  Include: Setting (specific city/environment), Characters (archetypes with ages), Central conflict, 
+  Episode structure, Tone (reference 3 existing shows), Why NOW (what changed in culture), 
+  and Why NOBODY is making this (the gap).
 
-6. For search_terms_to_track: provide 12-15 terms that REAL PEOPLE actually search on Google. Not academic terms. Not jargon.
-   BAD: "parasocial relationship dynamics"
-   GOOD: "why am I so lonely", "shows about friendship", "feel good tv shows"
+RULE 4: SEARCH TERMS MUST BE WHAT REAL HUMANS ACTUALLY GOOGLE
+  BAD: "parasocial dynamics in media consumption"
+  BAD: "post-industrial working class representation"  
+  BAD: "digital detox movement"
+  
+  GOOD: "shows about making friends as an adult"
+  GOOD: "why am I so lonely in my 30s"
+  GOOD: "dad trying not to cry compilation"
+  GOOD: "small town life tiktok"
+  GOOD: "immigrant parents funny"
+  GOOD: "blue collar workers deserve better"
+  
+  These are terms REAL PEOPLE type into Google and YouTube at 11pm when they're looking for content that speaks to them.
+  Give me 12-15 of these per prediction.
 
-7. For audience_size_millions: be aggressive but realistic. The loneliness epidemic affects 60M+ Americans. Men's mental health affects 40M+. Working class representation affects 80M+. These are REAL numbers.
+RULE 5: COMPARABLE SUCCESSES MUST INCLUDE REAL NUMBERS
+  BAD: "Ted Lasso was popular"
+  GOOD: "Ted Lasso averaged 7.6M viewers/episode in S3, won 11 Emmys, and drove 20% of Apple TV+ subscriber growth — proving that warm male-emotion-forward ensemble comedy has a massive audience that was previously invisible to Hollywood"
+  
+  BAD: "Everything Everywhere did well"
+  GOOD: "Everything Everywhere All At Once grossed $141M worldwide on a $25M budget (5.6x return), proving that immigrant family stories can be massive mainstream hits when they balance cultural specificity with universal emotional truth"
 
-8. For convergence_score: rate HONESTLY based on MY data.
-   8-10: You can point to strong signals in 5+ of my data sources
-   5-7: Signals in 3-4 of my data sources
-   1-4: Signals in 1-2 sources only
+RULE 6: THE DEMAND GAP MUST NAME WHAT EXISTS AND WHAT'S MISSING
+  BAD: "There's a gap in the market"
+  GOOD: "Stranger Things (61M households in first 28 days) taps 80s nostalgia but focuses on sci-fi/horror, not emotional character development. This Is Us (10M viewers at peak) did emotional family drama but felt saccharine to male audiences. The gap: a prestige drama that uses nostalgia as SETTING but emotional male vulnerability as STORY, in a tone closer to Friday Night Lights than either of those shows."
 
-9. For confidence: HIGH means the data is overwhelming and obvious. MODERATE means it's clearly there but not dominant. LOW means speculative. Given that I'm feeding you real trending data, most of your currents should be HIGH or MODERATE. If you can't find HIGH confidence currents in this data, you're not looking hard enough.
+RULE 7: AUDIENCE SIZE MUST BE JUSTIFIED
+  BAD: "audience_size_millions: 50"
+  GOOD: "audience_size_millions: 50" with target_demographic explaining: "50M US adults aged 25-45 who scored high on nostalgia-seeking in behavioral data: 67% watched at least one nostalgic rewatch in the past month (Netflix data), 45% follow 'nostalgia' accounts on Instagram (Meta data), and this demographic spends 2.3x more time on entertainment content than average (Nielsen)"
 
-10. comparable_successes must include SPECIFIC box office or viewership numbers.
-    BAD: "Ted Lasso was successful"
-    GOOD: "Ted Lasso generated 7.6M viewers per episode in S3 and won 11 Emmys, proving massive demand for warm ensemble comedy"
+═══════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════
 
 Return JSON:
 {
   "scan_date": "YYYY-MM-DD",
-  "total_signals_analyzed": <count ALL data points in my input>,
+  "total_signals_analyzed": <number>,
   "cultural_currents": [
     {
-      "name": "Short punchy name a normal person understands",
+      "name": "SHORT PUNCHY NAME — max 5 words, a normal person understands it",
       "rank": 1,
-      "psychological_drive": "WHO feels this (specific demographics with numbers), WHY they feel it (life circumstances), and HOW it manifests in their behavior",
-      "confidence": "HIGH/MODERATE/LOW — most should be HIGH given real data",
+      "psychological_drive": "WHO (specific demo with age/gender/lifestyle), WHY (what life circumstance triggers this), HOW (what behavior does it manifest as), and HOW MANY (population size with justification)",
+      "confidence": "HIGH/MODERATE/LOW",
       "convergence_score": <1-10 based on MY actual data>,
-      "supporting_sources": ["only list sources where you SAW signals in my data"],
-      "source_count": <real count>,
+      "supporting_sources": ["only sources with REAL signals in my data"],
+      "source_count": <number>,
       "key_signals": [
-        "QUOTE specific data from my input with numbers",
-        "Reference ACTUAL video titles, playlist names, article headlines from my data",
-        "At least 8 specific signals pulled directly from the data I gave you"
+        "QUOTE a specific data point from my input: 'YouTube video titled [X] has [Y] views'",
+        "QUOTE another: 'Spotify playlist [X] has [Y] tracks'",
+        "QUOTE another: 'Wikipedia article [X] gets [Y] views/day'",
+        "Reference at least 8 SPECIFIC items from my data — not generalities"
       ],
-      "target_demographic": "Age, gender, income level, lifestyle — with population size",
-      "audience_size_millions": <realistic but aggressive — think big>,
-      "format_recommendation": "Specific format with episode count",
-      "tone_and_style": "Name 2-3 existing hit shows for tone: 'Ted Lasso warmth meets The Bear intensity meets Fleabag honesty'",
-      "entertainment_prediction": "In [timeframe], a [format] about [specific subject] targeting [specific audience of Xm people] in the style of [comparables] will [specific measurable outcome]",
-      "demand_gap": "Name 2-3 existing shows that PARTIALLY satisfy this and explain what they're MISSING",
-      "content_opportunity": "One paragraph pitch — so specific a producer could greenlight it tomorrow. Include setting, characters, conflict, tone, and episode structure.",
-      "comparable_successes": ["Show A (Xm viewers, $Ym revenue) succeeded because Z", "Film B ($Xm box office) captured Y"],
-      "historical_parallel": "Which specific pre-hit demand pattern this resembles — reference Barbie ($1.44B), Squid Game (265M hours), The Bear (most watched Hulu premiere)",
-      "search_terms_to_track": ["12-15 terms real people actually google — not jargon"],
-      "risk_factors": ["2-3 specific risks with mitigation strategies"],
-      "timeframe": "X-Y months",
-      "what_to_watch": "Specific metric: 'When [search term] crosses [threshold], demand is confirmed'"
+      "target_demographic": "Age range, gender split, income, lifestyle, psychographic — with population justification",
+      "audience_size_millions": <number with justification in target_demographic>,
+      "format_recommendation": "Specific: '8-episode limited series, 45 min episodes, streaming' not just 'series'",
+      "tone_and_style": "EXACTLY like: '[Show A] warmth + [Show B] intensity + [Show C] humor' — use 3 specific references",
+      "entertainment_prediction": "In [X-Y months], a [specific format] about [specific subject] targeting [X million specific people] in the style of [3 comparables] will [specific measurable outcome]. This prediction is testable because [how to verify].",
+      "demand_gap": "Name 2-3 SPECIFIC existing shows that come CLOSEST. For each, explain what it gets RIGHT and what it MISSES. The gap is the thing ALL of them miss.",
+      "content_opportunity": "FULL PITCH: Setting (specific place), Characters (3-4 archetypes with ages and backgrounds), Central conflict (what drives the season), Episode structure (what happens each week), Tone (3 show references), Opening scene (describe the first 2 minutes). This should be 150-200 words minimum.",
+      "comparable_successes": ["[Show/Film] ([specific metric: viewers/gross/awards]) succeeded because [specific reason that maps to our prediction]"],
+      "historical_parallel": "This demand pattern resembles the pre-[specific hit] pattern because [specific parallels]. That content went on to [specific outcome].",
+      "search_terms_to_track": ["12-15 terms that REAL HUMANS type into Google at 11pm — conversational, emotional, specific"],
+      "risk_factors": ["Specific risk with specific mitigation — not generic warnings"],
+      "timeframe": "X-Y months with reasoning",
+      "what_to_watch": "When [specific search term] crosses [specific threshold] OR when [specific cultural event happens], this demand will peak. Monitor [specific metric] weekly."
     }
   ],
-  "meta_analysis": "3 paragraphs about the DOMINANT cultural mood in America right now. Reference specific data points from my input. Be bold and insightful. This should read like a brilliant Variety think piece, not a textbook.",
-  "biggest_gap": "The single most obvious massive unserved demand. Describe the EXACT content opportunity in 2-3 sentences. Make it so clear that anyone reading it says 'why doesn't this exist yet?'",
-  "collision_alert": "Are 3+ of your identified currents converging toward a single content opportunity — the way nostalgia + camp + feminism + communal experience converged for Barbie ($1.44B)? If yes, describe the collision and the content at the center. If no, say 'No mega-collision detected but [closest convergence described].'"
+  "meta_analysis": "3 bold paragraphs about the American cultural moment. Don't be academic. Write like the smartest person at a dinner party explaining what's happening in culture right now. Reference SPECIFIC data from my input. End with a provocative insight that reframes how studios should think about content development.",
+  "biggest_gap": "The #1 most valuable unserved demand. Describe the EXACT show/film in 3-4 sentences. Make it so compelling that anyone reading it says 'why doesn't this exist yet?' Include the audience size and comparable success.",
+  "collision_alert": "Are 3+ of your currents converging toward a SINGLE content opportunity? If yes: describe the collision, name the content at the center, estimate its potential (reference Barbie's $1.44B or Squid Game's 265M hours as benchmarks). If no: describe the closest convergence you see and what would push it over the edge."
 }
 
-IMPORTANT: Generate EXACTLY 7 currents. Make them BIG and OBVIOUS. I want a studio executive to read each one and say 'obviously, why aren't we making this?'
+Generate EXACTLY 7 predictions. Each must be COMPLETELY DIFFERENT from the others. No overlap. No repetition. Make them SHARP.
 
 RAW SIGNAL DATA:
 
 """
+
+# ============================================================
+# RELEVANCE FILTER — GPT checks if YouTube results are relevant
+# ============================================================
+def filter_relevant_videos(prediction_name, videos):
+    """Ask GPT to filter out irrelevant YouTube results."""
+    if not videos or len(videos) == 0:
+        return videos
+
+    titles = [v.get('title', '') for v in videos[:30]]
+    titles_text = '\n'.join(['- ' + t for t in titles])
+
+    prompt = """I'm tracking a cultural current called: """ + prediction_name + """
+
+Here are YouTube video titles I found. Rate each as RELEVANT or IRRELEVANT to this cultural demand.
+Only mark as RELEVANT if the video is actually about the cultural phenomenon, not just coincidentally containing a keyword.
+
+Videos:
+""" + titles_text + """
+
+Return JSON: {"relevant_indices": [0, 2, 5, ...]} — list of indices (0-based) that are relevant."""
+
+    result = ask_gpt_json(prompt, max_tokens=500)
+    if result and 'relevant_indices' in result:
+        indices = result['relevant_indices']
+        filtered = [videos[i] for i in indices if i < len(videos)]
+        return filtered if filtered else videos[:5]
+    return videos
 
 
 # ============================================================
@@ -147,15 +207,14 @@ def run_discovery():
     cache['error'] = None
 
     try:
-        print('[Popcorn] ========== DISCOVERY v5.0 ==========')
+        print('[Popcorn] ========== DISCOVERY v5.1 RAZOR SHARP ==========')
 
         # Step 1: Harvest
         print('[Popcorn] Step 1: Harvesting...')
         raw = harvest_all_signals()
         cache['raw_signals'] = raw
-        cache['status'] = 'GPT-4o analyzing signals'
+        cache['status'] = 'GPT-4o analyzing for sharp predictions'
 
-        # Count signals
         total_signals = 0
         for key, val in raw.items():
             if isinstance(val, list):
@@ -164,14 +223,14 @@ def run_discovery():
                 for v2 in val.values():
                     if isinstance(v2, list):
                         total_signals += len(v2)
-        print('[Popcorn] Signals harvested: ' + str(total_signals))
+        print('[Popcorn] Signals: ' + str(total_signals))
 
-        # Step 2: GPT
+        # Step 2: GPT Analysis
         sig_json = json.dumps(raw, indent=1, default=str)
         if len(sig_json) > 65000:
             sig_json = sig_json[:65000] + '\n...[truncated]'
 
-        print('[Popcorn] Step 2: GPT-4o analyzing...')
+        print('[Popcorn] Step 2: GPT-4o sharp analysis...')
         analysis = ask_gpt_json(PROMPT + sig_json, max_tokens=4096)
 
         if not analysis:
@@ -183,11 +242,11 @@ def run_discovery():
         currents = analysis.get('cultural_currents', [])
         print('[Popcorn] GPT returned ' + str(len(currents)) + ' currents')
 
-        # Step 3: Enrich with HEAVY real data
+        # Step 3: Enrich
         cache['status'] = 'enriching with live engagement data'
         enriched = []
 
-        for i, current in enumerate(currents[:8]):
+        for i, current in enumerate(currents[:7]):
             name = current.get('name', 'Unknown')
             print('[Popcorn] ---- ' + str(i+1) + '. ' + name + ' ----')
 
@@ -199,40 +258,58 @@ def run_discovery():
             data = {}
             sources_with_data = 0
 
-            # YOUTUBE — 6 searches × 10 results with full stats
+            # YOUTUBE — with relevance filtering
             try:
-                yt = []
+                yt_all = []
                 grand_views = 0
                 grand_likes = 0
                 grand_comments = 0
-                grand_vids = 0
+
                 for term in terms[:6]:
                     r = search_youtube(term, max_results=10)
                     if not r.get('error') and r.get('video_count', 0) > 0:
-                        yt.append(r)
-                        grand_views += r.get('total_views', 0)
-                        grand_likes += r.get('total_likes', 0)
-                        grand_comments += r.get('total_comments', 0)
-                        grand_vids += r.get('video_count', 0)
+                        yt_all.append(r)
                     t.sleep(0.5)
+
+                # Collect all videos
+                all_videos = []
+                for r in yt_all:
+                    all_videos.extend(r.get('videos', []))
+
+                # Filter for relevance
+                if len(all_videos) > 5:
+                    print('[Popcorn]   YT: Filtering ' + str(len(all_videos)) + ' videos for relevance...')
+                    cache['status'] = 'filtering YouTube results for ' + name
+                    all_videos = filter_relevant_videos(name, all_videos)
+                    print('[Popcorn]   YT: ' + str(len(all_videos)) + ' relevant videos')
+
+                for v in all_videos:
+                    grand_views += v.get('views', 0)
+                    grand_likes += v.get('likes', 0)
+                    grand_comments += v.get('comments', 0)
+
+                # Sort by views
+                all_videos.sort(key=lambda x: x.get('views', 0), reverse=True)
+
                 data['youtube'] = {
-                    'searches': yt,
-                    'total_videos': grand_vids,
+                    'searches': yt_all,
+                    'relevant_videos': all_videos[:15],
+                    'total_videos': len(all_videos),
                     'total_views': grand_views,
                     'total_likes': grand_likes,
                     'total_comments': grand_comments,
                     'total_views_formatted': format_number(grand_views),
                     'total_likes_formatted': format_number(grand_likes),
-                    'avg_views_per_video': format_number(round(grand_views / max(grand_vids, 1))),
+                    'avg_views_per_video': format_number(round(grand_views / max(len(all_videos), 1))),
                 }
-                if grand_vids > 0:
+                if len(all_videos) > 0:
                     sources_with_data += 1
-                print('[Popcorn]   YT: ' + str(grand_vids) + ' videos, ' + format_number(grand_views) + ' views, ' + format_number(grand_likes) + ' likes')
+                print('[Popcorn]   YT: ' + str(len(all_videos)) + ' relevant videos, ' + format_number(grand_views) + ' views')
             except Exception as e:
                 print('[Popcorn]   YT FAIL: ' + str(e))
-                data['youtube'] = {'searches': [], 'total_videos': 0, 'total_views': 0}
+                data['youtube'] = {'relevant_videos': [], 'total_videos': 0, 'total_views': 0}
 
-            # SPOTIFY — 6 searches × 10 playlists
+            # SPOTIFY
             try:
                 sp = []
                 grand_pl = 0
@@ -258,7 +335,7 @@ def run_discovery():
                 print('[Popcorn]   SP FAIL: ' + str(e))
                 data['spotify'] = {'searches': [], 'total_playlists': 0, 'total_tracks': 0}
 
-            # WIKIPEDIA — 8 articles
+            # WIKIPEDIA
             try:
                 wiki_terms = []
                 for term in terms[:8]:
@@ -281,12 +358,12 @@ def run_discovery():
                 }
                 if len(valid) > 0:
                     sources_with_data += 1
-                print('[Popcorn]   WIKI: ' + str(len(valid)) + ' articles, ' + format_number(total_daily) + ' daily views, ' + str(rising) + ' rising')
+                print('[Popcorn]   WIKI: ' + str(len(valid)) + ' articles, ' + format_number(total_daily) + '/day')
             except Exception as e:
                 print('[Popcorn]   WIKI FAIL: ' + str(e))
                 data['wikipedia'] = {'articles': [], 'total_articles': 0, 'total_daily_views': 0}
 
-            # NEWS — 6 searches × 10 articles
+            # NEWS
             try:
                 news = []
                 grand_articles = 0
@@ -308,12 +385,12 @@ def run_discovery():
                 }
                 if grand_articles > 0:
                     sources_with_data += 1
-                print('[Popcorn]   NEWS: ' + str(grand_articles) + ' articles from ' + str(len(all_sources)) + ' sources')
+                print('[Popcorn]   NEWS: ' + format_number(grand_articles) + ' articles, ' + str(len(all_sources)) + ' outlets')
             except Exception as e:
                 print('[Popcorn]   NEWS FAIL: ' + str(e))
                 data['news'] = {'searches': [], 'total_articles': 0}
 
-            # AO3 — 6 tags
+            # AO3
             try:
                 ao3 = get_ao3_batch(terms[:6])
                 total_works = sum(r.get('work_count', 0) for r in ao3 if isinstance(r, dict) and not r.get('error'))
@@ -329,7 +406,7 @@ def run_discovery():
                 print('[Popcorn]   AO3 FAIL: ' + str(e))
                 data['ao3'] = {'tags': [], 'total_works': 0}
 
-            # TMDB — 3 searches
+            # TMDB
             try:
                 tmdb = []
                 tmdb_count = 0
@@ -339,17 +416,14 @@ def run_discovery():
                         tmdb.append(r)
                         tmdb_count += r.get('count', 0)
                     t.sleep(0.3)
-                data['tmdb'] = {
-                    'searches': tmdb,
-                    'total_titles': tmdb_count,
-                }
-                sources_with_data += 1  # Always counts (inverse)
-                print('[Popcorn]   TMDB: ' + str(tmdb_count) + ' existing titles')
+                data['tmdb'] = {'searches': tmdb, 'total_titles': tmdb_count}
+                sources_with_data += 1
+                print('[Popcorn]   TMDB: ' + str(tmdb_count) + ' titles')
             except Exception as e:
                 print('[Popcorn]   TMDB FAIL: ' + str(e))
                 data['tmdb'] = {'searches': [], 'total_titles': 0}
 
-            # BOOKS — 3 searches
+            # BOOKS
             try:
                 books = []
                 book_count = 0
@@ -359,11 +433,7 @@ def run_discovery():
                         books.append(r)
                         book_count += r.get('total_found', 0)
                     t.sleep(0.3)
-                data['books'] = {
-                    'searches': books,
-                    'total_found': book_count,
-                    'total_found_formatted': format_number(book_count),
-                }
+                data['books'] = {'searches': books, 'total_found': book_count, 'total_found_formatted': format_number(book_count)}
                 if book_count > 0:
                     sources_with_data += 1
                 print('[Popcorn]   BOOKS: ' + format_number(book_count))
@@ -371,13 +441,11 @@ def run_discovery():
                 print('[Popcorn]   BOOKS FAIL: ' + str(e))
                 data['books'] = {'searches': [], 'total_found': 0}
 
-            # SCORE IT — aggressive but honest
             strength = score_it(data, sources_with_data)
-
-            print('[Popcorn]   SCORE: ' + str(strength['overall_score']) + ' | CONF: ' + strength['confidence'] + ' | SOURCES: ' + str(sources_with_data) + '/7')
+            print('[Popcorn]   SCORE: ' + str(strength['overall_score']) + ' | ' + strength['confidence'] + ' | ' + str(sources_with_data) + '/7 sources')
 
             enriched.append({
-                'id': name.lower().replace(' ', '-').replace('/', '-').replace("'", '').replace('"', '').replace(':', '').replace(',', '')[:40],
+                'id': name.lower().replace(' ', '-').replace('/', '-').replace("'", '').replace('"', '').replace(':', '').replace(',', '').replace('—', '-').replace('–', '-')[:40],
                 'name': name,
                 'rank': i + 1,
                 'psychological_drive': current.get('psychological_drive', ''),
@@ -385,8 +453,6 @@ def run_discovery():
                 'convergence_score': sources_with_data,
                 'source_count': sources_with_data,
                 'gpt_confidence': current.get('confidence', ''),
-                'gpt_convergence': current.get('convergence_score', 0),
-                'supporting_sources': current.get('supporting_sources', []),
                 'key_signals': current.get('key_signals', []),
                 'target_demographic': current.get('target_demographic', ''),
                 'audience_size_millions': current.get('audience_size_millions', 0),
@@ -406,7 +472,6 @@ def run_discovery():
                 'generated_at': datetime.utcnow().isoformat(),
             })
 
-        # Sort by score
         enriched.sort(key=lambda x: x['signal_strength']['overall_score'], reverse=True)
         for i, p in enumerate(enriched):
             p['rank'] = i + 1
@@ -422,8 +487,7 @@ def run_discovery():
         cache['status'] = 'loaded'
         cache['last_run'] = datetime.utcnow().isoformat()
         cache['loading'] = False
-
-        print('[Popcorn] ========== DONE: ' + str(len(enriched)) + ' predictions ==========')
+        print('[Popcorn] ========== DONE: ' + str(len(enriched)) + ' SHARP predictions ==========')
 
     except Exception as e:
         print('[Popcorn] FATAL: ' + str(e))
@@ -442,7 +506,7 @@ def make_terms(c):
                 p = words[i] + ' ' + words[i+1]
                 if 5 < len(p) < 35:
                     terms.add(p)
-    stop = {'the','and','for','that','this','with','from','are','but','not','has','will','about','their','they','been','have','into','more','than','what','when','who','how','can','its','all','may','would','could','should','just'}
+    stop = {'the','and','for','that','this','with','from','are','but','not','has','will','about','their','they','been','have','into','more','than','what','when','who','how','can','its','all','may','would','could','should','just','also','very','much','many','most','some','other','each','every','such','only'}
     return [x for x in terms if not all(w in stop for w in x.split())][:10]
 
 
@@ -450,149 +514,102 @@ def score_it(data, sources_with_data):
     scores = {}
     total = 0
     count = 0
-    grand_data_points = 0
+    grand_points = 0
 
-    # YOUTUBE — views are the king metric
     yt = data.get('youtube', {})
     if yt.get('total_videos', 0) > 0:
         views = yt.get('total_views', 0)
         vids = yt.get('total_videos', 0)
         likes = yt.get('total_likes', 0)
-
-        # Scale: 1M+ total views = 100, 100K = 70, 10K = 40
         if views >= 1000000:
             sc = 100
         elif views >= 100000:
-            sc = 70 + (views - 100000) / 30000
+            sc = 70 + min(30, (views - 100000) / 30000)
         elif views >= 10000:
-            sc = 40 + (views - 10000) / 3000
+            sc = 40 + min(30, (views - 10000) / 3000)
         else:
             sc = max(15, views / 250)
         sc = min(100, sc)
-
-        scores['youtube'] = {
-            'score': round(sc),
-            'detail': str(vids) + ' videos · ' + format_number(views) + ' total views · ' + format_number(likes) + ' likes',
-            'total_views': views,
-            'total_videos': vids,
-        }
+        scores['youtube'] = {'score': round(sc), 'detail': str(vids) + ' videos · ' + format_number(views) + ' views · ' + format_number(likes) + ' likes', 'total_views': views}
         total += sc
         count += 1
-        grand_data_points += vids
+        grand_points += vids
 
-    # SPOTIFY
     sp = data.get('spotify', {})
     if sp.get('total_playlists', 0) > 0:
         pls = sp.get('total_playlists', 0)
         tracks = sp.get('total_tracks', 0)
-
-        # Scale: 50+ playlists = 100, 20 = 70, 5 = 40
         if pls >= 50:
             sc = 100
         elif pls >= 20:
-            sc = 70 + (pls - 20) / 1
+            sc = 70 + min(30, (pls - 20))
         elif pls >= 5:
-            sc = 40 + (pls - 5) * 2
+            sc = 40 + min(30, (pls - 5) * 2)
         else:
             sc = pls * 8
         sc = min(100, sc)
-
-        scores['spotify'] = {
-            'score': round(sc),
-            'detail': str(pls) + ' playlists · ' + format_number(tracks) + ' total tracks',
-            'total_playlists': pls,
-        }
+        scores['spotify'] = {'score': round(sc), 'detail': str(pls) + ' playlists · ' + format_number(tracks) + ' tracks', 'total_playlists': pls}
         total += sc
         count += 1
-        grand_data_points += pls
+        grand_points += pls
 
-    # WIKIPEDIA
     wiki = data.get('wikipedia', {})
     if wiki.get('total_articles', 0) > 0:
         daily = wiki.get('total_daily_views', 0)
         arts = wiki.get('total_articles', 0)
         rising = wiki.get('rising_count', 0)
-
-        # Scale: 1000+ daily views across articles = 100
         if daily >= 1000:
             sc = 100
         elif daily >= 500:
-            sc = 75 + (daily - 500) / 20
+            sc = 75 + min(25, (daily - 500) / 20)
         elif daily >= 100:
-            sc = 45 + (daily - 100) / 13
+            sc = 45 + min(30, (daily - 100) / 13)
         else:
             sc = max(15, daily / 2.5)
-
-        # Bonus for rising articles
         if arts > 0:
-            rise_bonus = (rising / arts) * 15
-            sc = min(100, sc + rise_bonus)
-
-        scores['wikipedia'] = {
-            'score': round(sc),
-            'detail': str(arts) + ' articles · ' + format_number(daily) + ' views/day · ' + str(rising) + ' rising',
-            'total_daily': daily,
-        }
+            sc = min(100, sc + (rising / arts) * 15)
+        scores['wikipedia'] = {'score': round(sc), 'detail': str(arts) + ' articles · ' + format_number(daily) + ' views/day · ' + str(rising) + ' rising', 'total_daily': daily}
         total += sc
         count += 1
-        grand_data_points += daily
+        grand_points += daily
 
-    # NEWS
     news = data.get('news', {})
     if news.get('total_articles', 0) > 0:
         arts = news.get('total_articles', 0)
-        sources_count = news.get('unique_sources', 0)
-
-        # Scale: 500+ articles = 100, 100 = 70, 20 = 40
+        nsrc = news.get('unique_sources', 0)
         if arts >= 500:
             sc = 100
         elif arts >= 100:
-            sc = 70 + (arts - 100) / 13
+            sc = 70 + min(30, (arts - 100) / 13)
         elif arts >= 20:
-            sc = 40 + (arts - 20) / 2.7
+            sc = 40 + min(30, (arts - 20) / 2.7)
         else:
             sc = arts * 2
-        sc = min(100, sc)
-
-        # Bonus for source diversity
-        if sources_count >= 10:
+        if nsrc >= 10:
             sc = min(100, sc + 10)
-
-        scores['news'] = {
-            'score': round(sc),
-            'detail': format_number(arts) + ' articles · ' + str(sources_count) + ' news outlets',
-            'total_articles': arts,
-        }
+        sc = min(100, sc)
+        scores['news'] = {'score': round(sc), 'detail': format_number(arts) + ' articles · ' + str(nsrc) + ' outlets', 'total_articles': arts}
         total += sc
         count += 1
-        grand_data_points += arts
+        grand_points += arts
 
-    # AO3
     ao3 = data.get('ao3', {})
     if ao3.get('total_works', 0) > 0:
         works = ao3.get('total_works', 0)
-
-        # Scale: 50K+ works = 100, 10K = 70, 1K = 40
         if works >= 50000:
             sc = 100
         elif works >= 10000:
-            sc = 70 + (works - 10000) / 1333
+            sc = 70 + min(30, (works - 10000) / 1333)
         elif works >= 1000:
-            sc = 40 + (works - 1000) / 300
+            sc = 40 + min(30, (works - 1000) / 300)
         else:
             sc = max(10, works / 25)
         sc = min(100, sc)
-
-        scores['ao3'] = {
-            'score': round(sc),
-            'detail': format_number(works) + ' fan fiction works',
-            'total_works': works,
-        }
+        scores['ao3'] = {'score': round(sc), 'detail': format_number(works) + ' fan fiction works', 'total_works': works}
         total += sc
         count += 1
-        grand_data_points += works
+        grand_points += works
 
-    # TMDB — INVERSE
     tmdb = data.get('tmdb', {})
     tmdb_titles = tmdb.get('total_titles', 0)
     if tmdb_titles == 0:
@@ -605,42 +622,28 @@ def score_it(data, sources_with_data):
         sc = 35
     else:
         sc = max(5, 100 - tmdb_titles * 3)
-
-    scores['tmdb'] = {
-        'score': round(sc),
-        'detail': str(tmdb_titles) + ' existing titles (fewer = bigger gap)',
-        'total_titles': tmdb_titles,
-    }
+    scores['tmdb'] = {'score': round(sc), 'detail': str(tmdb_titles) + ' existing titles (fewer = bigger gap)', 'total_titles': tmdb_titles}
     total += sc
     count += 1
 
-    # BOOKS
     books = data.get('books', {})
     if books.get('total_found', 0) > 0:
         bks = books.get('total_found', 0)
-
         if bks >= 5000:
             sc = 100
         elif bks >= 1000:
-            sc = 70 + (bks - 1000) / 133
+            sc = 70 + min(30, (bks - 1000) / 133)
         elif bks >= 100:
-            sc = 40 + (bks - 100) / 30
+            sc = 40 + min(30, (bks - 100) / 30)
         else:
             sc = max(10, bks / 2.5)
         sc = min(100, sc)
-
-        scores['books'] = {
-            'score': round(sc),
-            'detail': format_number(bks) + ' related books',
-            'total_found': bks,
-        }
+        scores['books'] = {'score': round(sc), 'detail': format_number(bks) + ' related books', 'total_found': bks}
         total += sc
         count += 1
-        grand_data_points += bks
+        grand_points += bks
 
     overall = round(total / max(count, 1))
-
-    # Confidence based on overall + source count
     if overall >= 60 and sources_with_data >= 5:
         confidence = 'HIGH'
     elif overall >= 45 and sources_with_data >= 4:
@@ -655,8 +658,8 @@ def score_it(data, sources_with_data):
         'confidence': confidence,
         'sources_used': count,
         'sources_with_data': sources_with_data,
-        'total_data_points': grand_data_points,
-        'total_data_points_formatted': format_number(grand_data_points),
+        'total_data_points': grand_points,
+        'total_data_points_formatted': format_number(grand_points),
         'source_scores': scores,
     }
 
@@ -668,12 +671,11 @@ def score_it(data, sources_with_data):
 def index():
     return send_from_directory('public', 'index.html')
 
-
 @app.route('/api/health')
 def health():
     return jsonify({
         'status': 'ok',
-        'version': '5.0 — Sharp + Real Numbers',
+        'version': '5.1 — RAZOR SHARP',
         'discovery_status': cache['status'],
         'predictions_generated': len(cache['predictions']),
         'last_run': cache['last_run'],
@@ -688,20 +690,22 @@ def health():
         },
     })
 
-
 @app.route('/api/discover', methods=['POST'])
 def trigger():
     if cache['loading']:
         return jsonify({'message': 'Already running.'}), 429
     threading.Thread(target=run_discovery, daemon=True).start()
-    return jsonify({'message': 'Started. Takes 10-15 minutes.'})
-
+    return jsonify({'message': 'Started.'})
 
 @app.route('/api/predictions')
 def predictions():
     preds = []
     for p in cache['predictions']:
         s = p['signal_strength']
+        yt = p.get('supporting_data', {}).get('youtube', {})
+        sp = p.get('supporting_data', {}).get('spotify', {})
+        news = p.get('supporting_data', {}).get('news', {})
+        wiki = p.get('supporting_data', {}).get('wikipedia', {})
         preds.append({
             'id': p['id'],
             'name': p['name'],
@@ -721,12 +725,14 @@ def predictions():
             'signal_score': s['overall_score'],
             'total_data_points': s.get('total_data_points_formatted', '0'),
             'generated_at': p['generated_at'],
-            # Summary engagement numbers for the card
             'headline_stats': {
-                'youtube_views': p.get('supporting_data', {}).get('youtube', {}).get('total_views_formatted', '0'),
-                'spotify_playlists': p.get('supporting_data', {}).get('spotify', {}).get('total_playlists_formatted', '0'),
-                'news_articles': p.get('supporting_data', {}).get('news', {}).get('total_articles_formatted', '0'),
-                'wiki_daily': p.get('supporting_data', {}).get('wikipedia', {}).get('total_daily_formatted', '0'),
+                'youtube_views': yt.get('total_views_formatted', '0'),
+                'youtube_videos': str(yt.get('total_videos', 0)),
+                'spotify_playlists': sp.get('total_playlists_formatted', '0'),
+                'spotify_tracks': sp.get('total_tracks_formatted', '0'),
+                'news_articles': news.get('total_articles_formatted', '0'),
+                'news_outlets': str(news.get('unique_sources', 0)),
+                'wiki_daily': wiki.get('total_daily_formatted', '0'),
             },
         })
     return jsonify({
@@ -737,7 +743,6 @@ def predictions():
         'last_run': cache['last_run'],
     })
 
-
 @app.route('/api/predictions/<pid>')
 def prediction_detail(pid):
     for p in cache['predictions']:
@@ -745,13 +750,11 @@ def prediction_detail(pid):
             return jsonify(p)
     return jsonify({'error': 'Not found'}), 404
 
-
 @app.route('/api/raw-signals')
 def raw():
     return jsonify(cache.get('raw_signals', {}))
 
-
-# Scanner
+# Scanner routes
 @app.route('/api/scan/youtube')
 def s_yt():
     q = request.args.get('q', '')
@@ -810,7 +813,6 @@ def analysis_detail(cid):
     d = get_all_analyses()
     return jsonify(d[cid]) if cid in d else (jsonify({'error': 'Not found'}), 404)
 
-
 # Auto-start
 _started = False
 
@@ -820,7 +822,6 @@ def auto():
     if not _started and not cache['loading']:
         _started = True
         threading.Thread(target=run_discovery, daemon=True).start()
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
