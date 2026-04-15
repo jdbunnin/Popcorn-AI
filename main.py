@@ -227,8 +227,8 @@ def run_discovery():
 
         # Step 2: GPT Analysis
         sig_json = json.dumps(raw, indent=1, default=str)
-        if len(sig_json) > 65000:
-            sig_json = sig_json[:65000] + '\n...[truncated]'
+        if len(sig_json) > 40000:
+            sig_json = sig_json[:40000] + '\n...[truncated]'
 
         print('[Popcorn] Step 2: GPT-4o sharp analysis...')
         analysis = ask_gpt_json(PROMPT + sig_json, max_tokens=4096)
