@@ -69,7 +69,7 @@ def ask_gpt_json(prompt, max_tokens=4096):
                 'temperature': 0.4,
                 'response_format': {'type': 'json_object'},
             },
-            timeout=90
+            timeout=120
         )
         resp.raise_for_status()
         text = resp.json()['choices'][0]['message']['content']
